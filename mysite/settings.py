@@ -21,9 +21,7 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 # ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.railway.app']
 # Ensure scheme (https://) is included for CSRF_TRUSTED_ORIGINS
 ALLOWED_HOSTS = ['web-production-1e213.up.railway.app', 'localhost', '127.0.0.1']
-
 CSRF_TRUSTED_ORIGINS = ['https://web-production-1e213.up.railway.app']
-# This ensures Django knows it is behind a secure proxy (Railway)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # --- APPLICATION DEFINITION ---
 
