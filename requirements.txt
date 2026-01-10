@@ -1,13 +1,19 @@
+# Core Django & ASGI
 Django==5.2.8
 asgiref==3.10.0
-
-# Channels / ASGI
 channels==4.3.2
 daphne==4.2.1
 channels_redis==4.3.0
 redis==7.1.0
 
-# Security & crypto
+# Deployment Essentials (Added for Railway)
+dj-database-url==2.1.0      # Parses Railway's DATABASE_URL
+psycopg2-binary==2.9.9      # PostgreSQL database driver
+whitenoise==6.6.0           # Serves your CSS/JS files
+gunicorn==23.0.0            # WSGI HTTP Server
+uvicorn==0.30.1             # ASGI Server helper
+
+# Security & Crypto
 cryptography==46.0.3
 pyOpenSSL==25.3.0
 cffi==2.0.0
@@ -16,7 +22,7 @@ service-identity==24.2.0
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
 
-# Networking / async
+# Networking / Async
 Twisted==25.5.0
 txaio==25.9.2
 autobahn==25.10.2
@@ -26,7 +32,7 @@ hyperlink==21.0.0
 incremental==24.7.2
 zope.interface==8.1.1
 
-# Django utilities
+# Django Utilities
 django-jazzmin==3.0.1
 sqlparse==0.5.3
 tzdata==2025.2
@@ -40,5 +46,5 @@ typing_extensions==4.15.0
 six==1.17.0
 psutil==7.2.1
 
-# Deployment helpers
+# Deployment Helpers
 setuptools==80.9.0
