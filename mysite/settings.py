@@ -20,6 +20,7 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 # Allow local dev and your Railway domain
 # ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.railway.app']
 # Ensure scheme (https://) is included for CSRF_TRUSTED_ORIGINS
+#ALLOWED_HOSTS = ['web-production-1e213.up.railway.app', 'localhost', '127.0.0.1']
 ALLOWED_HOSTS = ['web-production-1e213.up.railway.app', 'localhost', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://web-production-1e213.up.railway.app']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
