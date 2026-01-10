@@ -1,1 +1,1 @@
-web: python manage.py migrate && daphne -b 0.0.0.0 -p $PORT mysite.asgi:application
+web: python manage.py createsuperuser --noinput || true && python manage.py migrate && daphne -b 0.0.0.0 -p $PORT mysite.asgi:application
