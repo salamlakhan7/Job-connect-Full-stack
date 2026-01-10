@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact Us | Job Connect</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+  {% include 'navbar.html' %}
+
+  <section class="py-16">
+    <div class="container mx-auto px-6 text-center">
+      <h1 class="text-3xl font-bold text-blue-700 mb-10">Contact Us</h1>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="bg-white shadow-lg rounded-xl p-8">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800">Get In Touch</h2>
+          <p class="text-gray-600 mb-6">We’d love to hear from you! Send us your queries or feedback.</p>
+          <p><strong>Email:</strong> support@jobconnect.com</p>
+          <p><strong>Phone:</strong> +92 333 1234567</p>
+          <p><strong>Location:</strong> Karachi, Pakistan</p>
+        </div>
+
+        <div>
+          <iframe class="rounded-xl shadow w-full h-64"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3621.962598404044!2d67.0305603!3d24.8607346!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3eb33e0f9f6c0d89%3A0xa2c6d612b89f4c47!2sKarachi%2C%20Pakistan!5e0!3m2!1sen!2s!4v1611229987654!5m2!1sen!2s"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

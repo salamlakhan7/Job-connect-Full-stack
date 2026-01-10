@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="min-h-screen bg-gray-100 py-12">
+  <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-xl p-8">
+
+    <h1 class="text-3xl font-bold text-blue-700 mb-6">Apply for {{ job.title }}</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Resume Upload -->
+      <div class="mb-5">
+        <label class="block font-semibold text-gray-700 mb-1">Upload Resume (PDF/DOC)</label>
+        <input type="file" name="resume" 
+               class="w-full border border-gray-300 p-2 rounded-lg" 
+               required>
+      </div>
+
+      <!-- Cover Letter -->
+      <div class="mb-5">
+        <label class="block font-semibold text-gray-700 mb-1">Cover Letter (optional)</label>
+        <textarea name="cover_letter" rows="5"
+                  class="w-full border border-gray-300 p-2 rounded-lg"></textarea>
+      </div>
+
+      <button class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
+        Submit Application
+      </button>
+    </form>
+
+  </div>
+</section>
+{% endblock %}

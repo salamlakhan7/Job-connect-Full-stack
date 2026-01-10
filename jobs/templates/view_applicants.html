@@ -1,0 +1,85 @@
+{% extends 'employer_base.html' %}
+{% block content %}
+
+<section class="p-6">
+    <h1 class="text-2xl font-bold mb-6">Applicants for: {{ job.title }}</h1>
+
+    {% if applicants %}
+    <div class="space-y-4">
+        {% for app in applicants %}
+        <div class="p-4 border rounded bg-white shadow-sm">
+
+            <!-- Applicant Name -->
+            <h2 class="text-lg font-semibold">
+                {{ app.applicant.user.username }}
+            </h2>
+
+            <!-- Cover letter -->
+            <p class="mt-1 text-gray-700">
+                {{ app.cover_letter|default:"No cover letter provided" }}
+            </p>
+
+            <!-- Resume -->
+            <a href="{{ app.resume.url }}" class="text-blue-600 underline block mt-2">
+                Download Resume
+            </a>
+
+            <!-- Status -->
+            <p class="mt-2 text-sm">
+                <strong>Status:</strong>
+                <span class="px-3 py-1 bg-gray-200 rounded">
+                    {{ app.get_status_display }}
+                </span>
+            </p>
+
+            <!-- ACTIONS -->
+            <div class="mt-4 flex flex-wrap gap-2">
+
+                <!-- Accept -->
+                <form method="POST" action="{% url 'update_application_status' job.id app.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="shortlisted">
+                    <button class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+                        Shortlist
+                    </button>
+                </form>
+
+                <!-- Reject -->
+                <form method="POST" action="{% url 'update_application_status' job.id app.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="rejected">
+                    <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+                        Reject
+                    </button>
+                </form>
+
+                <!-- Hire -->
+                <form method="POST" action="{% url 'update_application_status' job.id app.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="hired">
+                    <button class="bg-blue-700 text-white px-3 py-1 rounded hover:bg-blue-800">
+                        Hire
+                    </button>
+                </form>
+
+                <!-- Schedule Interview -->
+                <a href="{% url 'schedule_interview' app.id %}"
+                    class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
+                    Schedule Interview
+                </a>
+
+                <!-- Chat Button -->
+                <a href="{% url 'chat_start' app.id %}" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Chat with Applicant</a>
+
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-500">No applicants yet.</p>
+    {% endif %}
+
+</section>
+
+{% endblock %}

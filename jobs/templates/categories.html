@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Job Categories | Job Connect</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+  {% include 'navbar.html' %}
+
+  <section class="py-16">
+    <div class="container mx-auto text-center">
+      <h1 class="text-3xl font-bold mb-10 text-blue-700">Job Categories</h1>
+      <div class="grid md:grid-cols-3 gap-8 px-6">
+        <div class="p-6 bg-white rounded-xl shadow hover:shadow-lg">
+          <h2 class="text-xl font-semibold mb-2 text-gray-800">IT & Software</h2>
+          <p class="text-gray-600">Developers, Data Analysts, and Network Engineers</p>
+        </div>
+        <div class="p-6 bg-white rounded-xl shadow hover:shadow-lg">
+          <h2 class="text-xl font-semibold mb-2 text-gray-800">Marketing</h2>
+          <p class="text-gray-600">SEO Experts, Managers, and Digital Marketers</p>
+        </div>
+        <div class="p-6 bg-white rounded-xl shadow hover:shadow-lg">
+          <h2 class="text-xl font-semibold mb-2 text-gray-800">Design</h2>
+          <p class="text-gray-600">UI/UX Designers, Graphic Artists, and Animators</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

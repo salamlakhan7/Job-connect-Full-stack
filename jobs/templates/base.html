@@ -1,0 +1,347 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Job Connect - Your Gateway to Career Success{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 antialiased">
+
+    <!-- Modern Navbar -->
+    <nav class="fixed w-full top-0 z-50 glass backdrop-blur-md bg-white/80 shadow-sm">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+
+                <!-- Logo -->
+                <a href="/" class="flex items-center space-x-2">
+                    <div
+                        class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <span
+                        class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Job
+                        Connect</span>
+                </a>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:flex items-center space-x-8">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'all_jobs' %}"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition">Browse Jobs</a>
+                    <a href="{% url 'my_applications' %}"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition">Applications</a>
+                    <a href="{% url 'saved_jobs' %}"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition">Saved</a>
+                    <a href="{% url 'seeker_profile' %}"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition">Profile</a>
+                    <a href="{% url 'logout' %}"
+                        class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full font-semibold hover:shadow-lg transition">Logout</a>
+                    {% else %}
+                    <a href="{% url 'login' %}"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition">Login</a>
+                    <a href="{% url 'login' %}"
+                        class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full font-semibold hover:shadow-lg transition">Get
+                        Started</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+    <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 3000)"
+        class="fixed top-24 right-6 bg-white border-l-4 border-green-500 px-6 py-4 rounded-lg shadow-2xl z-50 max-w-md">
+        {% for message in messages %}
+        <div class="flex items-center">
+            <svg class="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="text-gray-800 font-medium">{{ message }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Page Content -->
+    <main class="pt-20">
+        {% block content %}
+        <!-- Default Landing Page Hero -->
+        <section class="relative min-h-screen flex items-center gradient-bg overflow-hidden">
+            <!-- Animated Background Elements -->
+            <div class="absolute inset-0 overflow-hidden">
+                <div class="absolute top-20 left-10 w-72 h-72 bg-white/10 rounded-full blur-3xl animate-float"></div>
+                <div class="absolute bottom-20 right-10 w-96 h-96 bg-purple-300/20 rounded-full blur-3xl animate-float"
+                    style="animation-delay: 2s;"></div>
+            </div>
+
+            <div class="container mx-auto px-6 relative z-10">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <!-- Hero Text -->
+                    <div class="text-white">
+                        <h1 class="text-6xl md:text-7xl font-black mb-6 leading-tight">
+                            Find Your <span class="text-yellow-300">Dream Job</span> Today
+                        </h1>
+                        <p class="text-xl md:text-2xl mb-8 text-white/90 leading-relaxed">
+                            Connect with top employers and discover opportunities that match your skills and ambitions.
+                        </p>
+                        <div class="flex flex-wrap gap-4">
+                            <a href="{% url 'all_jobs' %}"
+                                class="bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-lg hover:shadow-2xl hover:scale-105 transition transform">
+                                Explore Jobs
+                            </a>
+                            <a href="{% url 'login' %}"
+                                class="glass text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition">
+                                Sign Up Free
+                            </a>
+                        </div>
+
+                        <!-- Stats -->
+                        <div class="grid grid-cols-3 gap-6 mt-12">
+                            <div>
+                                <div class="text-4xl font-black text-yellow-300">10K+</div>
+                                <div class="text-white/80">Active Jobs</div>
+                            </div>
+                            <div>
+                                <div class="text-4xl font-black text-yellow-300">5K+</div>
+                                <div class="text-white/80">Companies</div>
+                            </div>
+                            <div>
+                                <div class="text-4xl font-black text-yellow-300">50K+</div>
+                                <div class="text-white/80">Job Seekers</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hero Image/Illustration -->
+                    <div class="hidden md:block">
+                        <div class="relative">
+                            <div class="glass p-8 rounded-3xl hover-lift">
+                                <svg class="w-full h-auto" viewBox="0 0 500 500" fill="none">
+                                    <circle cx="250" cy="250" r="200" fill="white" opacity="0.1" />
+                                    <rect x="150" y="150" width="200" height="250" rx="20" fill="white" opacity="0.2" />
+                                    <circle cx="250" cy="200" r="40" fill="white" opacity="0.3" />
+                                    <rect x="180" y="260" width="140" height="10" rx="5" fill="white" opacity="0.3" />
+                                    <rect x="180" y="290" width="100" height="10" rx="5" fill="white" opacity="0.3" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="py-20 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2
+                        class="text-5xl font-black mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        Why Choose Job Connect?</h2>
+                    <p class="text-xl text-gray-600">Everything you need to land your dream job</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Feature 1 -->
+                    <div class="bg-gradient-to-br from-blue-50 to-purple-50 p-8 rounded-2xl hover-lift">
+                        <div
+                            class="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3">Smart Job Matching</h3>
+                        <p class="text-gray-600">Our AI-powered algorithm matches you with jobs that fit your skills and
+                            preferences perfectly.</p>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-8 rounded-2xl hover-lift">
+                        <div
+                            class="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center mb-6">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3">Real-Time Chat</h3>
+                        <p class="text-gray-600">Connect directly with employers through our integrated messaging system
+                            for instant communication.</p>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div class="bg-gradient-to-br from-green-50 to-teal-50 p-8 rounded-2xl hover-lift">
+                        <div
+                            class="w-16 h-16 bg-gradient-to-br from-green-600 to-teal-600 rounded-2xl flex items-center justify-center mb-6">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3">Easy Application</h3>
+                        <p class="text-gray-600">Apply to multiple jobs with one click. Track all your applications in
+                            one convenient dashboard.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% endblock %}
+    </main>
+
+    {% if user.is_authenticated %}
+    <!-- Floating Chat Button -->
+    <a href="{% url 'chat_list' %}"
+        class="fixed bottom-6 right-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl hover:scale-110 transition transform z-50 flex items-center justify-center group">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+            </path>
+        </svg>
+        <span
+            class="absolute right-full mr-3 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg">
+            Open Chat
+        </span>
+    </a>
+    {% endif %}
+
+    <!-- Professional Footer -->
+    <footer class="bg-gray-900 text-gray-300 pt-16 pb-8">
+        <div class="container mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-12 mb-12">
+                <!-- Company Info -->
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div
+                            class="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <span class="text-xl font-bold text-white">Job Connect</span>
+                    </div>
+                    <p class="text-gray-400 leading-relaxed">Your gateway to career success. Connecting talented
+                        professionals with amazing opportunities.</p>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-white font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="{% url 'all_jobs' %}" class="hover:text-blue-400 transition">Browse Jobs</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">Companies</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">About Us</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">Contact</a></li>
+                    </ul>
+                </div>
+
+                <!-- For Employers -->
+                <div>
+                    <h3 class="text-white font-bold mb-4">For Employers</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-blue-400 transition">Post a Job</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">Pricing</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">Resources</a></li>
+                        <li><a href="#" class="hover:text-blue-400 transition">Support</a></li>
+                    </ul>
+                </div>
+
+                <!-- Newsletter -->
+                <div>
+                    <h3 class="text-white font-bold mb-4">Stay Updated</h3>
+                    <p class="text-gray-400 mb-4">Get the latest job opportunities delivered to your inbox.</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Your email"
+                            class="flex-1 px-4 py-2 rounded-l-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500 text-white">
+                        <button
+                            class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-2 rounded-r-lg font-semibold text-white hover:shadow-lg transition">Subscribe</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400">© 2026 Job Connect. All Rights Reserved.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="text-gray-400 hover:text-blue-400 transition">Privacy Policy</a>
+                    <a href="#" class="text-gray-400 hover:text-blue-400 transition">Terms of Service</a>
+                    <a href="#" class="text-gray-400 hover:text-blue-400 transition">Cookie Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>

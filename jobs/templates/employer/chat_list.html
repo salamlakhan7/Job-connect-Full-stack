@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Messages — Job Connect{% endblock %}
+{% block content %}
+
+<!-- Professional Chat List Page -->
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+  <!-- Header Section -->
+  <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+    <div class="container mx-auto px-6">
+      <h1 class="text-5xl font-black mb-4">Messages</h1>
+      <p class="text-xl text-white/90">Connect with candidates and employers</p>
+    </div>
+  </div>
+
+  <div class="container mx-auto px-6 py-12">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div class="grid md:grid-cols-3">
+        <!-- Conversations Sidebar -->
+        <aside class="md:col-span-1 border-r border-gray-200">
+          <div class="p-6 border-b border-gray-200">
+            <h2 class="text-2xl font-bold mb-4">Conversations</h2>
+            <input type="text" id="searchConvo" placeholder="Search messages..."
+              class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+
+          <div id="convoList" class="overflow-y-auto" style="max-height: 600px;">
+            {% for convo in conversations %}
+            <a href="{% url 'chat_room' convo.id %}"
+              class="block p-4 hover:bg-blue-50 transition border-b border-gray-100 group">
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                  {{ convo.other_user.first_name|default:convo.other_user.username|slice:":1"|upper }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex justify-between items-start mb-1">
+                    <h3 class="font-bold text-gray-900 truncate group-hover:text-blue-600 transition">
+                      {{ convo.title|default:convo.other_user.username }}
+                    </h3>
+                    <span class="text-xs text-gray-500">{{ convo.last_message_time|date:"M d" }}</span>
+                  </div>
+                  <p class="text-sm text-gray-600 truncate">{{ convo.last_message_preview|default:"Start a conversation"
+                    }}</p>
+                </div>
+              </div>
+            </a>
+            {% empty %}
+            <div class="p-8 text-center">
+              <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                </path>
+              </svg>
+              <p class="text-gray-500">No conversations yet</p>
+            </div>
+            {% endfor %}
+          </div>
+        </aside>
+
+        <!-- Preview Area -->
+        <div
+          class="md:col-span-2 p-12 flex flex-col items-center justify-center text-center bg-gradient-to-br from-gray-50 to-blue-50">
+          <svg class="w-32 h-32 text-blue-200 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+            </path>
+          </svg>
+          <h3 class="text-3xl font-bold text-gray-900 mb-3">Select a Conversation</h3>
+          <p class="text-gray-600 text-lg max-w-md">Choose a conversation from the list to start messaging with
+            employers or job seekers in real-time.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

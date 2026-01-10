@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Professional Saved Jobs Page -->
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <!-- Header Section -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+        <div class="container mx-auto px-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-5xl font-black mb-4">Saved Jobs</h1>
+                    <p class="text-xl text-white/90">Your bookmarked opportunities</p>
+                </div>
+                <div class="hidden md:block">
+                    <svg class="w-32 h-32 text-white/20" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-12">
+        {% if saved %}
+        <div class="grid gap-6">
+            {% for s in saved %}
+            <div
+                class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+                <div class="p-6">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-start gap-4">
+                                <!-- Company Logo -->
+                                <div
+                                    class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
+                                    {{ s.job.company_name|default:"C"|slice:":1"|upper }}
+                                </div>
+                                <div class="flex-1">
+                                    <h2
+                                        class="text-2xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition">
+                                        {{ s.job.title }}
+                                    </h2>
+                                    <p class="text-gray-600 font-medium mb-2">
+                                        {{ s.job.company_name|default:"Unknown Company" }}
+                                    </p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <span
+                                            class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
+                                                </path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            {{ s.job.location }}
+                                        </span>
+                                        <span
+                                            class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                                            {{ s.job.job_type }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Saved Badge -->
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-full text-sm font-semibold flex items-center">
+                                <svg class="w-5 h-5 mr-1 fill-current" viewBox="0 0 20 20">
+                                    <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+                                </svg>
+                                Saved
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <p class="text-gray-700 leading-relaxed mt-4 mb-4">
+                        {{ s.job.description|truncatechars:150 }}
+                    </p>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3">
+                        <a href="{% url 'job_detail' s.job.id %}"
+                            class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center py-3 rounded-xl font-semibold hover:shadow-lg transition transform hover:scale-105">
+                            View Details
+                        </a>
+                        <a href="{% url 'unsave_job' s.job.id %}" onclick="return confirm('Remove from saved jobs?')"
+                            class="px-6 py-3 border-2 border-red-500 text-red-500 rounded-xl font-semibold hover:bg-red-50 transition flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                </path>
+                            </svg>
+                            Remove
+                        </a>
+                    </div>
+                </div>
+                <div
+                    class="h-1 bg-gradient-to-r from-blue-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="bg-white rounded-2xl shadow-lg p-16 text-center">
+            <svg class="w-32 h-32 mx-auto text-gray-300 mb-6" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path>
+            </svg>
+            <h3 class="text-3xl font-bold text-gray-900 mb-3">No Saved Jobs Yet</h3>
+            <p class="text-gray-600 text-lg mb-6">Start saving jobs you're interested in to view them here</p>
+            <a href="{% url 'all_jobs' %}"
+                class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transition">
+                Browse Jobs
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

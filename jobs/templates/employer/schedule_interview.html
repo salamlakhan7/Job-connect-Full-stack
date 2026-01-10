@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- Professional Schedule Interview Page -->
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12">
+    <div class="container mx-auto px-6">
+        <div class="max-w-2xl mx-auto">
+
+            <!-- Header Card -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-2xl p-8 mb-8 text-white">
+                <h1 class="text-4xl font-black mb-3">Schedule Interview</h1>
+                <p class="text-xl text-white/90">Set up an interview with {{
+                    application.applicant.user.get_full_name|default:application.applicant.user.username }}</p>
+            </div>
+
+            <!-- Form Card -->
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+
+                <!-- Applicant Info -->
+                <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 mb-8">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-2xl">
+                            {{
+                            application.applicant.user.get_full_name|default:application.applicant.user.username|slice:":1"|upper
+                            }}
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">{{
+                                application.applicant.user.get_full_name|default:application.applicant.user.username }}
+                            </h3>
+                            <p class="text-gray-600">{{ application.applicant.user.email }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- Interview Date -->
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            Interview Date
+                        </label>
+                        <input type="date" name="date" required
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+
+                    <!-- Interview Time -->
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Interview Time
+                        </label>
+                        <input type="time" name="time" required
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+
+                    <!-- Interview Type -->
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            Interview Type
+                        </label>
+                        <select name="interview_type"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="video">Video Call</option>
+                            <option value="phone">Phone Call</option>
+                            <option value="in-person">In-Person</option>
+                        </select>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-2 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
+                            </svg>
+                            Additional Notes (Optional)
+                        </label>
+                        <textarea name="notes" rows="4"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                            placeholder="Add any additional information or instructions..."></textarea>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="flex gap-4">
+                        <button type="submit"
+                            class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-4 rounded-xl hover:shadow-lg transition transform hover:scale-105 flex items-center justify-center">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            Schedule Interview
+                        </button>
+                        <a href="{% url 'view_applicants' application.job.id %}"
+                            class="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

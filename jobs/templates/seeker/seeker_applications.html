@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Professional Seeker Applications Page -->
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <!-- Header Section -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+        <div class="container mx-auto px-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-5xl font-black mb-4">My Applications</h1>
+                    <p class="text-xl text-white/90">Manage and track all your job applications</p>
+                </div>
+                <div class="hidden md:block">
+                    <div class="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+                        <div class="text-5xl font-black">{{ applications|length }}</div>
+                        <div class="text-white/90 font-medium">Active Applications</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-6 py-12">
+        {% if applications %}
+        <div class="space-y-6">
+            {% for app in applications %}
+            <div
+                class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1">
+                            <div class="flex items-start gap-4">
+                                <!-- Company Logo -->
+                                <div
+                                    class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
+                                    {{ app.job.company_name|default:"C"|slice:":1"|upper }}
+                                </div>
+                                <div class="flex-1">
+                                    <h2
+                                        class="text-2xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition">
+                                        {{ app.job.title }}
+                                    </h2>
+                                    <p class="text-gray-600 font-medium mb-2">
+                                        {{ app.job.company_name|default:"Unknown Company" }}
+                                    </p>
+                                    <div class="flex flex-wrap gap-2 mb-3">
+                                        <span
+                                            class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
+                                                </path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            {{ app.job.location }}
+                                        </span>
+                                        <span
+                                            class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                </path>
+                                            </svg>
+                                            Applied {{ app.applied_at|date:"M d, Y" }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Badge -->
+                        <span class="px-4 py-2 rounded-full text-sm font-bold flex items-center
+              {% if app.status == 'Accepted' %}bg-green-100 text-green-700
+              {% elif app.status == 'Rejected' %}bg-red-100 text-red-700
+              {% elif app.status == 'Interview' %}bg-purple-100 text-purple-700
+              {% else %}bg-blue-100 text-blue-700{% endif %}">
+                            <svg class="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                {% if app.status == 'Accepted' %}
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"></path>
+                                {% elif app.status == 'Rejected' %}
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                    clip-rule="evenodd"></path>
+                                {% else %}
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                                    clip-rule="evenodd"></path>
+                                {% endif %}
+                            </svg>
+                            {{ app.status }}
+                        </span>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3">
+                        <a href="{% url 'job_detail' app.job.id %}"
+                            class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center py-3 rounded-xl font-semibold hover:shadow-lg transition transform hover:scale-105 flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                </path>
+                            </svg>
+                            View Job
+                        </a>
+                        <a href="{% url 'chat_start' app.id %}"
+                            class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                </path>
+                            </svg>
+                            Chat
+                        </a>
+                        <a href="{{ app.resume.url }}" target="_blank"
+                            class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
+                            </svg>
+                            Resume
+                        </a>
+                    </div>
+                </div>
+                <div
+                    class="h-1 bg-gradient-to-r from-blue-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="bg-white rounded-2xl shadow-lg p-16 text-center">
+            <svg class="w-32 h-32 mx-auto text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                </path>
+            </svg>
+            <h3 class="text-3xl font-bold text-gray-900 mb-3">No Applications Yet</h3>
+            <p class="text-gray-600 text-lg mb-6">You haven't applied for any jobs yet. Start exploring opportunities!
+            </p>
+            <a href="{% url 'all_jobs' %}"
+                class="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transition">
+                Browse Jobs
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

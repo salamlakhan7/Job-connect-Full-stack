@@ -1,0 +1,760 @@
+{% extends base_template %}
+{% comment %} {% extends "base.html" %} {% endcomment %}
+
+
+
+{% load static chat_extras %}
+
+{% block title %}
+Messages | Job Connect
+{% endblock %}
+
+{% block content %}
+<!-- Tailwind & Alpine (ensure these are loaded) -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<style>
+  /* Modern Professional Chat Styles */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* Custom scrollbar for chat area */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chat-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .chat-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+  }
+
+  .chat-scroll::-webkit-scrollbar-track {
+    background-color: #f7fafc;
+  }
+
+  /* Smooth scroll behavior */
+  .chat-scroll {
+    scroll-behavior: smooth;
+  }
+
+  /* Message animations */
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .message-enter {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  .message-enter-left {
+    animation: slideInLeft 0.3s ease-out;
+  }
+
+  /* Enhanced message bubbles */
+  .message-bubble-sent {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+  }
+
+  .message-bubble-sent:hover {
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    transform: translateY(-1px);
+  }
+
+  .message-bubble-received {
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+  }
+
+  .message-bubble-received:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+  }
+
+  /* Input area enhancement */
+  .chat-input-container {
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  }
+
+  .chat-input {
+    transition: all 0.3s ease;
+  }
+
+  .chat-input:focus {
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  /* Send button enhancement */
+  .send-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transition: all 0.3s ease;
+  }
+
+  .send-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .send-button:active:not(:disabled) {
+    transform: translateY(0) scale(0.95);
+  }
+
+  /* Conversation list enhancement */
+  .conversation-item {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .conversation-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
+  }
+
+  .conversation-item:hover::before {
+    width: 4px;
+  }
+
+  .conversation-item:hover {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    transform: translateX(2px);
+  }
+
+  /* Avatar enhancement */
+  .avatar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+  }
+
+  /* Online indicator pulse */
+  @keyframes pulse {
+
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 0.8;
+      transform: scale(1.1);
+    }
+  }
+
+  .online-indicator {
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  /* File preview enhancement */
+  .file-preview-item {
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border: 2px dashed #cbd5e0;
+    transition: all 0.3s ease;
+  }
+
+  .file-preview-item:hover {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%);
+  }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: inline-flex;
+    gap: 4px;
+  }
+
+  .typing-dot {
+    width: 8px;
+    height: 8px;
+    background: #cbd5e0;
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+  }
+
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes typing {
+
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.7;
+    }
+
+    30% {
+      transform: translateY(-10px);
+      opacity: 1;
+    }
+  }
+
+  /* Header gradient */
+  .chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  /* Sidebar header */
+  .sidebar-header {
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  }
+</style>
+
+<div class="h-[calc(100vh-80px)] bg-gray-50 flex flex-col font-sans">
+
+  <div
+    class="flex-1 max-w-7xl w-full mx-auto bg-white shadow-xl rounded-lg overflow-hidden flex my-4 border border-gray-200">
+
+    <!-- LEFT SIDEBAR: Conversation List -->
+    <aside class="w-full md:w-1/3 lg:w-1/4 border-r border-gray-200 flex flex-col bg-white">
+      <!-- Sidebar Header -->
+      <div class="sidebar-header p-4 border-b border-gray-200 flex justify-between items-center">
+        <h2
+          class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">
+          Messaging</h2>
+        <a href="{% if user.userprofile.role == 'employer' %}{% url 'employer_dashboard' %}{% else %}{% url 'seeker_dashboard' %}{% endif %}"
+          class="text-xs font-semibold text-purple-600 hover:text-purple-700 transition-colors">Exit</a>
+      </div>
+
+      <!-- Search (Visual only for now) -->
+      <div class="p-3">
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <input type="text" placeholder="Search messages"
+            class="w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-full text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
+        </div>
+      </div>
+
+      <!-- List -->
+      <div class="flex-1 overflow-y-auto">
+        {% for c in conversations %}
+        <a href="{% url 'chat_room' c.id %}"
+          class="conversation-item flex items-center p-4 border-b border-gray-100 {% if c.is_active %}bg-gradient-to-r from-purple-50 to-blue-50{% endif %}">
+          <div class="relative">
+            <div class="avatar w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg">
+              {{ c.title|slice:":1"|upper }}
+            </div>
+            <!-- Online Indicator -->
+            <span
+              class="online-indicator absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+          </div>
+          <div class="ml-3 flex-1 min-w-0">
+            <div class="flex justify-between items-baseline mb-1">
+              <h3 class="text-sm font-bold text-gray-900 truncate">{{ c.title }}</h3>
+              <span class="text-xs font-medium text-gray-400">{{ c.last_message_time|date:"M d" }}</span>
+            </div>
+            <p class="text-xs text-gray-600 truncate">{{ c.last_message_preview|default:"Start a conversation..." }}</p>
+          </div>
+        </a>
+        {% empty %}
+        <div class="p-8 text-center text-gray-400">
+          <p>No conversations found.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </aside>
+
+
+    <!-- RIGHT MAIN: Chat Area -->
+    <main class="w-full md:w-2/3 lg:w-3/4 flex flex-col bg-gray-50 relative">
+
+      <!-- Chat Header -->
+      {% if conversation %}
+      <header class="chat-header h-16 flex items-center justify-between px-6 shadow-lg z-10">
+        <div class="flex items-center">
+          <div
+            class="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-white font-bold text-lg mr-3 shadow-md">
+            {{ other_user.first_name|default:other_user.username|slice:":1"|upper }}
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-white leading-tight">
+              {{ other_user.get_full_name|default:other_user.username }}
+            </h3>
+            <div class="flex items-center space-x-2">
+              <p class="text-sm text-white text-opacity-90 font-medium">
+                {{ other_user.userprofile.role|default:"User"|title }}
+              </p>
+              <span class="text-white text-opacity-50">•</span>
+              <p class="text-xs text-white text-opacity-90 font-medium flex items-center">
+                <span class="online-indicator w-2 h-2 bg-green-300 rounded-full mr-1"></span> Active Now
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions Toolbar -->
+        <div class="flex items-center space-x-3">
+          <button id="btnSchedule" title="Schedule Interview"
+            class="p-2 text-white text-opacity-80 hover:text-white hover:bg-white hover:bg-opacity-20 rounded-full transition-all">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+          </button>
+          <button id="btnStartMeeting" title="Start Video Meeting"
+            class="p-2 text-white text-opacity-80 hover:text-white hover:bg-white hover:bg-opacity-20 rounded-full transition-all">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+              </path>
+            </svg>
+          </button>
+        </div>
+      </header>
+      {% endif %}
+
+
+      <!-- Messages List -->
+      {% if conversation %}
+      <div id="messages" class="flex-1 overflow-y-auto p-6 space-y-4 chat-scroll bg-gray-50">
+        {% for msg in chat_history %}
+        {% if msg.sender.id == user.id %}
+        <!-- Outgoing -->
+        <div class="flex justify-end message-enter">
+          <div class="max-w-[70%]">
+            <div class="message-bubble-sent text-white p-4 rounded-2xl rounded-tr-none text-sm">
+              {{ msg.content|linebreaksbr }}
+              <!-- Attachments -->
+              {% if msg.attachments.all %}
+              <div class="mt-2 space-y-1">
+                {% for att in msg.attachments.all %}
+                {% if att.file.url|lower|slice:"-4:" == ".jpg" or att.file.url|lower|slice:"-4:" == ".png" or
+                att.file.url|lower|slice:"-5:" == ".jpeg" %}
+                <img src="{{ att.file.url }}" class="rounded-lg max-h-48 border border-blue-400">
+
+                <a href="{{ att.file.url }}" target="_blank"
+                  class="flex items-center bg-blue-700 bg-opacity-50 p-2 rounded hover:bg-blue-800 transition">
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828L20 9.828V7h-4.828z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18" />
+                  </svg>
+                  {{ att.file.name|slice:"11:" }}
+                </a>
+
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            <p class="text-[10px] text-gray-400 text-right mt-1 mr-1 font-medium">{{ msg.created_at|date:"H:i" }}</p>
+          </div>
+        </div>
+        {% else %}
+        <!-- Incoming -->
+        <div class="flex justify-start message-enter-left">
+          <div
+            class="avatar w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2 mt-1">
+            {{ msg.sender.first_name|default:msg.sender.username|slice:":1"|upper }}
+          </div>
+          <div class="max-w-[70%]">
+            <div class="message-bubble-received text-gray-800 p-4 rounded-2xl rounded-tl-none text-sm">
+              {{ msg.content|linebreaksbr }}
+              <!-- Attachments -->
+              {% if msg.attachments.all %}
+              <div class="mt-2 space-y-1">
+                {% for att in msg.attachments.all %}
+                {% if att.file.url|lower|slice:"-4:" == ".jpg" or att.file.url|lower|slice:"-4:" == ".png" or
+                att.file.url|lower|slice:"-5:" == ".jpeg" %}
+                <img src="{{ att.file.url }}" class="rounded-lg max-h-48 border border-gray-200">
+
+                <a href="{{ att.file.url }}" target="_blank"
+                  class="flex items-center bg-gray-100 p-2 rounded hover:bg-gray-200 transition text-blue-600">
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828L20 9.828V7h-4.828z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18" />
+                  </svg>
+                  Attachment
+                </a>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            <p class="text-[10px] text-gray-400 mt-1 ml-1 font-medium">{{ msg.created_at|date:"H:i" }}</p>
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+
+      <!-- Input Components -->
+      <footer class="chat-input-container p-4">
+
+        <div id="filePreview" class="mb-2 flex flex-wrap gap-2"></div>
+
+        <form id="messageForm" class="flex items-center space-x-3">
+          <!-- File Button -->
+          <label
+            class="cursor-pointer text-gray-500 hover:text-purple-600 p-2.5 rounded-full hover:bg-purple-50 transition-all">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828L20 9.828V7h-4.828z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18" />
+            </svg>
+            <input type="file" id="fileInput" class="hidden" multiple>
+          </label>
+
+          <!-- Emoji Button (Visual) -->
+          <button type="button"
+            class="text-gray-500 hover:text-yellow-500 p-2.5 rounded-full hover:bg-yellow-50 transition-all">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+
+          <!-- Text Input -->
+          <input type="text" id="messageInput"
+            class="chat-input flex-1 bg-gray-50 border border-gray-200 rounded-full px-5 py-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-medium"
+            placeholder="Type your message...">
+
+          <!-- Send Button -->
+          <button type="submit" id="sendBtn"
+            class="send-button text-white rounded-full p-3.5 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+          </button>
+        </form>
+
+        <div class="text-xs text-gray-400 mt-2 text-center" id="typingIndicator" style="visibility: hidden;">
+          {{ other_user.first_name }} is typing...
+        </div>
+      </footer>
+      {% else %}
+      <!-- Empty State -->
+      <div class="flex-1 flex flex-col items-center justify-center p-10 text-center">
+        <svg class="w-24 h-24 text-blue-100 mb-6" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
+            clip-rule="evenodd"></path>
+        </svg>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Select a conversation</h2>
+        <p class="text-gray-500 max-w-md">Pick a conversation from the sidebar to start chatting, or browse jobs to
+          message new employers.</p>
+      </div>
+      {% endif %}
+
+    </main>
+  </div>
+</div>
+
+{% if conversation %}
+<script>
+  const USER_ID = {{ user.id }};
+  const CONVO_ID = {{ conversation.id }};
+  const WS_URL = "{{ ws_url }}";
+  const UPLOAD_URL = "{% url 'chat_upload' %}";
+
+  // UI References
+  const messagesDiv = document.getElementById('messages');
+  const msgInput = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const fileInput = document.getElementById('fileInput');
+  const filePreview = document.getElementById('filePreview');
+  const typingIndicator = document.getElementById('typingIndicator');
+
+  // Scroll to bottom on load
+  if (messagesDiv) {
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  // --- WebSocket ---
+  const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+  const socket = new WebSocket(`${wsScheme}://${window.location.host}${WS_URL}`);
+
+  socket.onopen = () => {
+    console.log("✅ Connected to Chat WebSocket");
+    console.log("Room ID:", CONVO_ID);
+    console.log("User ID:", USER_ID);
+  };
+
+  socket.onmessage = (e) => {
+    console.log("📩 WebSocket message received:", e.data);
+    const data = JSON.parse(e.data);
+    if (data.action === "receive") {
+      console.log("💬 New message:", data.message);
+      appendMessage(data.message);
+    } else if (data.action === "typing") {
+      if (String(data.user_id) !== String(USER_ID)) {
+        showTyping(data.is_typing);
+      }
+    } else if (data.action === "error") {
+      console.error("❌ WebSocket error:", data.message);
+      alert("Error: " + data.message);
+    }
+  };
+
+  socket.onclose = () => {
+    console.log("❌ Disconnected from Chat WebSocket");
+  };
+
+  socket.onerror = (error) => {
+    console.error("🔴 WebSocket error:", error);
+  };
+
+  // --- Sending Messages ---
+  const msgForm = document.getElementById('messageForm');
+  if (msgForm) {
+    msgForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = msgInput.value.trim();
+      if (!text && selectedFiles.length === 0) return;
+
+      // Upload first
+      let attachments = [];
+      if (selectedFiles.length > 0) {
+        // Disable button
+        sendBtn.disabled = true;
+        try {
+          for (let f of selectedFiles) {
+            const uploaded = await uploadFile(f);
+            attachments.push(uploaded);
+          }
+        } catch (error) {
+          console.error("Upload error", error);
+          alert("Failed to upload file.");
+          sendBtn.disabled = false;
+          return;
+        }
+      }
+
+      const payload = {
+        action: 'send',
+        content: text,
+        type: 'text',
+        attachments: attachments
+      };
+
+      console.log("📤 Sending message:", payload);
+      socket.send(JSON.stringify(payload));
+
+      // Reset UI
+      msgInput.value = '';
+      selectedFiles = [];
+      renderFilePreview();
+      sendBtn.disabled = false;
+    });
+  }
+
+  // --- Typing Indicator ---
+  let typingTimer;
+  if (msgInput) {
+    msgInput.addEventListener('input', () => {
+      socket.send(JSON.stringify({ action: 'typing' }));
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        socket.send(JSON.stringify({ action: 'stop_typing' }));
+      }, 1500);
+    });
+  }
+
+  function showTyping(isTyping) {
+    if (typingIndicator) typingIndicator.style.visibility = isTyping ? 'visible' : 'hidden';
+  }
+
+  // --- File Handling ---
+  let selectedFiles = [];
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      selectedFiles = [...selectedFiles, ...Array.from(fileInput.files)];
+      renderFilePreview();
+      fileInput.value = ''; // allow selecting same file again
+    });
+  }
+
+  function renderFilePreview() {
+    if (!filePreview) return;
+    filePreview.innerHTML = '';
+    selectedFiles.forEach((f, index) => {
+      const el = document.createElement('div');
+      el.className = 'flex items-center bg-gray-100 text-xs px-2 py-1 rounded border border-gray-300';
+      el.innerHTML = `
+                <span class="max-w-[100px] truncate">${f.name}</span>
+                <button type="button" class="ml-2 text-red-500 font-bold" onclick="removeFile(${index})">×</button>
+            `;
+      filePreview.appendChild(el);
+    });
+  }
+
+  window.removeFile = (index) => {
+    selectedFiles.splice(index, 1);
+    renderFilePreview();
+  };
+
+  async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    // We can pass conversation_id for folder organization
+    formData.append('conversation_id', CONVO_ID);
+
+    const res = await fetch(UPLOAD_URL, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    });
+    if (!res.ok) throw new Error("Upload Failed");
+    return await res.json(); // { file_path: '...', name: '...', size: ... }
+  }
+
+  // --- UI Append Message ---
+  function appendMessage(msg) {
+    const isMe = String(msg.sender_id) === String(USER_ID);
+    const div = document.createElement('div');
+    div.className = isMe ? "flex justify-end message-enter" : "flex justify-start message-enter-left";
+
+    let attachmentHtml = '';
+    if (msg.attachments && msg.attachments.length > 0) {
+      attachmentHtml = `<div class="mt-2 space-y-1">`;
+      msg.attachments.forEach(att => {
+        // Simple heuristic for image
+        const ext = att.file_path.split('.').pop().toLowerCase();
+        const isImg = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+
+        const url = att.file_url || att.file_path; // Fallback
+
+        if (isImg) {
+          attachmentHtml += `<img src="${url}" class="rounded-lg max-h-48 border border-gray-200">`;
+        } else {
+          attachmentHtml += `
+                     <a href="${url}" target="_blank" class="flex items-center ${isMe ? 'bg-blue-700 bg-opacity-50' : 'bg-gray-100'} p-2 rounded hover:opacity-80 transition">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828L20 9.828V7h-4.828z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18" /></svg>
+                        <span>Attachment</span>
+                     </a>`;
+        }
+      });
+      attachmentHtml += `</div>`;
+    }
+
+    const bubbleClass = isMe
+      ? "message-bubble-sent text-white rounded-tr-none"
+      : "message-bubble-received text-gray-800 rounded-tl-none";
+
+    const avatarHtml = !isMe
+      ? `<div class="avatar w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2 mt-1">${msg.sender.charAt(0).toUpperCase()}</div>`
+      : ``;
+
+    div.innerHTML = `
+            ${avatarHtml}
+            <div class="max-w-[70%]">
+                <div class="${bubbleClass} p-4 rounded-2xl text-sm">
+                    ${escapeHtml(msg.content).replace(/\n/g, '<br>')}
+                    ${attachmentHtml}
+                </div>
+                 <p class="text-[10px] text-gray-400 ${isMe ? 'text-right mr-1' : 'ml-1'} mt-1 font-medium">Just now</p>
+            </div>
+        `;
+
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function escapeHtml(text) {
+    if (!text) return "";
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // --- CSRF Helper ---
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  // --- Toolbar Buttons ---
+  const btnMeeting = document.getElementById('btnStartMeeting');
+  if (btnMeeting) {
+    btnMeeting.addEventListener('click', () => {
+      // Generate Jitsi link and send as message
+      const roomName = `job-connect-${CONVO_ID}-${Date.now().toString(36)}`;
+      const link = `https://meet.jit.si/${roomName}`;
+      const msg = `Please join the video meeting here: ${link}`;
+
+      // Auto send this message
+      msgInput.value = msg;
+    });
+  }
+
+  const btnSchedule = document.getElementById('btnSchedule');
+  if (btnSchedule) {
+    btnSchedule.addEventListener('click', () => {
+      msgInput.value = "I'd like to schedule an interview. Please let me know your availability.";
+      msgInput.focus();
+    });
+  }
+
+</script>
+{% endif %}
+{% endblock %}

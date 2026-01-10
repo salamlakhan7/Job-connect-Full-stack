@@ -1,0 +1,388 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Enhanced Hero Section with Background Image & Gradients -->
+<section class="relative min-h-screen flex items-center overflow-hidden">
+  <!-- Multi-layered Background -->
+  <div class="absolute inset-0">
+    <!-- Base Gradient -->
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900"></div>
+
+    <!-- Mesh Gradient Overlay -->
+    <div class="absolute inset-0 opacity-70"
+      style="background: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%), radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.3), transparent 50%), radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.3), transparent 50%);">
+    </div>
+
+    <!-- Animated Gradient -->
+    <div class="absolute inset-0 gradient-bg opacity-60"></div>
+
+    <!-- SVG Pattern Background -->
+    <svg class="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+          <circle cx="30" cy="30" r="1.5" fill="white" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
+    </svg>
+
+    <!-- Geometric Shapes -->
+    <div
+      class="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-float">
+    </div>
+    <div
+      class="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-float"
+      style="animation-delay: 2s;"></div>
+    <div
+      class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-float"
+      style="animation-delay: 4s;"></div>
+
+    <!-- Noise Texture Overlay -->
+    <div class="absolute inset-0 opacity-5"
+      style="background-image: url('data:image/svg+xml,%3Csvg viewBox=&apos;0 0 400 400&apos; xmlns=&apos;http://www.w3.org/2000/svg&apos;%3E%3Cfilter id=&apos;noiseFilter&apos;%3E%3CfeTurbulence type=&apos;fractalNoise&apos; baseFrequency=&apos;0.9&apos; numOctaves=&apos;4&apos; stitchTiles=&apos;stitch&apos;/%3E%3C/filter%3E%3Crect width=&apos;100%25&apos; height=&apos;100%25&apos; filter=&apos;url(%23noiseFilter)&apos;/%3E%3C/svg%3E');">
+    </div>
+  </div>
+
+
+  <div class="container mx-auto px-6 relative z-10">
+    <div class="max-w-4xl mx-auto text-center text-white">
+      <h1 class="text-6xl md:text-7xl font-black mb-6 leading-tight">
+        Find Your <span class="text-yellow-300">Dream Job</span> Today
+      </h1>
+      <p class="text-xl md:text-2xl mb-10 text-white/90 leading-relaxed">
+        Connect with top employers and discover opportunities that match your skills and ambitions.
+      </p>
+
+      <!-- Job Search Bar -->
+      <form action="{% url 'job_search' %}" method="get" class="bg-white rounded-2xl shadow-2xl p-3 mb-8">
+        <div class="grid md:grid-cols-12 gap-3">
+          <!-- Keyword Input -->
+          <div class="md:col-span-5">
+            <input type="text" name="q" placeholder="Job title, keywords, or company"
+              class="w-full px-6 py-4 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+          </div>
+
+          <!-- Location Input -->
+          <div class="md:col-span-4">
+            <input type="text" name="location" placeholder="City or remote"
+              class="w-full px-6 py-4 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+          </div>
+
+          <!-- Search Button -->
+          <div class="md:col-span-3">
+            <button type="submit"
+              class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition transform">
+              Search Jobs
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <div class="flex flex-wrap justify-center gap-4 mb-12">
+        <a href="{% url 'all_jobs' %}"
+          class="bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-lg hover:shadow-2xl hover:scale-105 transition transform">
+          Browse All Jobs
+        </a>
+        <a href="{% url 'login' %}"
+          class="glass text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition border-2 border-white">
+          Sign Up Free
+        </a>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-6 max-w-2xl mx-auto">
+        <div>
+          <div class="text-4xl font-black text-yellow-300">10K+</div>
+          <div class="text-white/80">Active Jobs</div>
+        </div>
+        <div>
+          <div class="text-4xl font-black text-yellow-300">5K+</div>
+          <div class="text-white/80">Companies</div>
+        </div>
+        <div>
+          <div class="text-4xl font-black text-yellow-300">50K+</div>
+          <div class="text-white/80">Job Seekers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Job Categories Section -->
+<section class="py-20 bg-gray-50">
+  <div class="container mx-auto px-6">
+    <div class="text-center mb-16">
+      <h2 class="text-5xl font-black mb-4 text-gray-900">Explore by <span
+          class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Category</span></h2>
+      <p class="text-xl text-gray-600">Find opportunities in your field of expertise</p>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6">
+      <!-- Category Card 1 -->
+      <div class="bg-white p-6 rounded-2xl hover-lift cursor-pointer group">
+        <div
+          class="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Technology</h3>
+        <p class="text-gray-600 mb-3">5,234 jobs available</p>
+        <a href="{% url 'all_jobs' %}" class="text-blue-600 font-semibold hover:underline">Explore →</a>
+      </div>
+
+      <!-- Category Card 2 -->
+      <div class="bg-white p-6 rounded-2xl hover-lift cursor-pointer group">
+        <div
+          class="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
+          <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+            </path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Business</h3>
+        <p class="text-gray-600 mb-3">3,891 jobs available</p>
+        <a href="{% url 'all_jobs' %}" class="text-purple-600 font-semibold hover:underline">Explore →</a>
+      </div>
+
+      <!-- Category Card 3 -->
+      <div class="bg-white p-6 rounded-2xl hover-lift cursor-pointer group">
+        <div
+          class="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
+          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+            </path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Marketing</h3>
+        <p class="text-gray-600 mb-3">2,567 jobs available</p>
+        <a href="{% url 'all_jobs' %}" class="text-green-600 font-semibold hover:underline">Explore →</a>
+      </div>
+
+      <!-- Category Card 4 -->
+      <div class="bg-white p-6 rounded-2xl hover-lift cursor-pointer group">
+        <div
+          class="w-16 h-16 bg-gradient-to-br from-pink-100 to-pink-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
+          <svg class="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01">
+            </path>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-2">Design</h3>
+        <p class="text-gray-600 mb-3">1,923 jobs available</p>
+        <a href="{% url 'all_jobs' %}" class="text-pink-600 font-semibold hover:underline">Explore →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-20 bg-white">
+  <div class="container mx-auto px-6">
+    <div class="text-center mb-16">
+      <h2 class="text-5xl font-black mb-4 text-gray-900">How It <span
+          class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Works</span></h2>
+      <p class="text-xl text-gray-600">Get started in three simple steps</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-12 relative">
+      <!-- Step 1 -->
+      <div class="text-center relative">
+        <div
+          class="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold shadow-lg">
+          1
+        </div>
+        <h3 class="text-2xl font-bold mb-4">Create Your Profile</h3>
+        <p class="text-gray-600 leading-relaxed">Sign up and build a professional profile showcasing your skills,
+          experience, and career goals.</p>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="text-center relative">
+        <div
+          class="w-20 h-20 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold shadow-lg">
+          2
+        </div>
+        <h3 class="text-2xl font-bold mb-4">Find Perfect Matches</h3>
+        <p class="text-gray-600 leading-relaxed">Browse thousands of job listings or let our AI match you with
+          opportunities that fit your profile.</p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="text-center relative">
+        <div
+          class="w-20 h-20 bg-gradient-to-br from-pink-600 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold shadow-lg">
+          3
+        </div>
+        <h3 class="text-2xl font-bold mb-4">Apply & Connect</h3>
+        <p class="text-gray-600 leading-relaxed">Apply with one click and chat directly with employers through our
+          integrated messaging system.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="py-20 bg-gradient-to-br from-blue-50 to-purple-50">
+  <div class="container mx-auto px-6">
+    <div class="text-center mb-16">
+      <h2 class="text-5xl font-black mb-4 text-gray-900">Success <span
+          class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Stories</span></h2>
+      <p class="text-xl text-gray-600">Hear from our community</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Testimonial 1 -->
+      <div class="bg-white p-8 rounded-2xl shadow-lg hover-lift">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl mr-4">
+            S
+          </div>
+          <div>
+            <h4 class="font-bold text-gray-900">Sarah Johnson</h4>
+            <p class="text-sm text-gray-600">Software Engineer</p>
+          </div>
+        </div>
+        <div class="flex mb-4">
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+        </div>
+        <p class="text-gray-700 italic">"Job Connect helped me land my dream job in just 2 weeks! The platform is
+          intuitive and the chat feature made communication with employers seamless."</p>
+      </div>
+
+      <!-- Testimonial 2 -->
+      <div class="bg-white p-8 rounded-2xl shadow-lg hover-lift">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold text-xl mr-4">
+            M
+          </div>
+          <div>
+            <h4 class="font-bold text-gray-900">Michael Chen</h4>
+            <p class="text-sm text-gray-600">Product Manager</p>
+          </div>
+        </div>
+        <div class="flex mb-4">
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+        </div>
+        <p class="text-gray-700 italic">"As an employer, I've found incredible talent through Job Connect. The quality
+          of candidates and ease of communication is unmatched."</p>
+      </div>
+
+      <!-- Testimonial 3 -->
+      <div class="bg-white p-8 rounded-2xl shadow-lg hover-lift">
+        <div class="flex items-center mb-4">
+          <div
+            class="w-12 h-12 bg-gradient-to-br from-green-600 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-xl mr-4">
+            A
+          </div>
+          <div>
+            <h4 class="font-bold text-gray-900">Aisha Malik</h4>
+            <p class="text-sm text-gray-600">UX Designer</p>
+          </div>
+        </div>
+        <div class="flex mb-4">
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+          <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+            </path>
+          </svg>
+        </div>
+        <p class="text-gray-700 italic">"The platform's design and user experience are top-notch. I found multiple
+          opportunities that aligned perfectly with my career goals."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-20 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+  <div class="container mx-auto px-6 text-center">
+    <h2 class="text-5xl font-black mb-6">Ready to Take the Next Step?</h2>
+    <p class="text-2xl mb-10 text-white/90">Join thousands of professionals who found their dream jobs</p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{% url 'login' %}"
+        class="bg-white text-blue-600 px-10 py-4 rounded-full font-bold text-lg hover:shadow-2xl hover:scale-105 transition transform">
+        Get Started Free
+      </a>
+      <a href="{% url 'all_jobs' %}"
+        class="glass text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition border-2 border-white">
+        Browse Jobs
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

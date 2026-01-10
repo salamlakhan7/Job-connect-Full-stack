@@ -1,0 +1,18 @@
+<header class="flex justify-between items-center p-6 shadow-sm bg-white sticky top-0 z-10">
+  <h1 class="text-2xl font-bold text-blue-600">Job Connect</h1>
+  <nav class="space-x-6 text-gray-700 font-medium flex items-center">
+
+    <a href="{% url 'home' %}" class="hover:text-blue-600">Home</a> 
+    <a href="{% url 'categories' %}" class="hover:text-blue-600">Categories</a>
+    <a href="{% url 'jobs' %}" class="hover:text-blue-600">Jobs</a>
+    <a href="{% url 'how_it_works' %}" class="hover:text-blue-600">How It Works</a>
+    <a href="{% url 'contact' %}" class="hover:text-blue-600">Contact</a>
+
+    <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+      Login
+    </a>
+    <a href="{% url 'choose_role' %}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+      Register
+    </a>
+  </nav>
+</header>

@@ -1,0 +1,35 @@
+<!-- FILE: templates/employer/employer_base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Employer | {{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+<div class="flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-blue-700 text-white p-6 space-y-6">
+        <h2 class="text-2xl font-bold">Employer Panel</h2>
+
+        <nav class="space-y-3">
+            <a href="{% url 'employer_dashboard' %}" class="block hover:text-yellow-300">Dashboard</a>
+            {% comment %} <a href="{% url 'employer_jobs' %}" class="block hover:text-yellow-300">My Job Posts</a> {% endcomment %}
+            <a href="{% url 'post_job' %}" class="block hover:text-yellow-300">Post New Job</a>
+            <a href="{% url 'logout' %}" class="block text-red-300 mt-8">Logout</a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+</div>
+
+</body>
+</html>

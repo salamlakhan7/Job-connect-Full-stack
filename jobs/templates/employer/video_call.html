@@ -1,0 +1,77 @@
+<video id="localVideo" autoplay muted playsinline style="width:300px"></video>
+<video id="remoteVideo" autoplay playsinline style="width:300px"></video>
+<button id="startCall">Start Call</button>
+<button id="hangup">Hang Up</button>
+
+<script>
+const roomName = "{{ room_name }}";
+const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+const signalingSocket = new WebSocket(wsScheme + '://' + window.location.host + '/ws/signaling/' + roomName + '/');
+
+let pc = null;
+let localStream = null;
+
+const configuration = {
+  iceServers: [
+    {urls: 'stun:stun.l.google.com:19302'},
+    // For production: add your TURN server here
+  ]
+};
+
+async function startLocalStream() {
+  localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+  document.getElementById('localVideo').srcObject = localStream;
+}
+
+signalingSocket.onmessage = async (event) => {
+  const data = JSON.parse(event.data);
+
+  if (data.type === 'offer') {
+    await ensurePeer();
+    await pc.setRemoteDescription(new RTCSessionDescription(data));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    signalingSocket.send(JSON.stringify(pc.localDescription));
+  } else if (data.type === 'answer') {
+    await pc.setRemoteDescription(new RTCSessionDescription(data));
+  } else if (data.type === 'ice') {
+    if (data.candidate) {
+      try {
+        await pc.addIceCandidate(data.candidate);
+      } catch (e) { console.error(e); }
+    }
+  }
+}
+
+async function ensurePeer() {
+  if (pc) return;
+  pc = new RTCPeerConnection(configuration);
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      signalingSocket.send(JSON.stringify({type: 'ice', candidate: e.candidate}));
+    }
+  };
+  pc.ontrack = (e) => {
+    document.getElementById('remoteVideo').srcObject = e.streams[0];
+  };
+
+  // Add local tracks
+  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+}
+
+document.getElementById('startCall').onclick = async () => {
+  await startLocalStream();
+  await ensurePeer();
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  signalingSocket.send(JSON.stringify(pc.localDescription));
+};
+
+document.getElementById('hangup').onclick = () => {
+  if (pc) {
+    pc.close();
+    pc = null;
+  }
+  signalingSocket.close();
+};
+</script>
