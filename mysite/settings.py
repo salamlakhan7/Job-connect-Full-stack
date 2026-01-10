@@ -18,8 +18,11 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-0pwhx+%(we1d!kwfp%3o+
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 # Allow local dev and your Railway domain
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.railway.app']
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.railway.app']
+ALLOWED_HOSTS = ['*'] # Or your specific railway domain
 
+# Add this line to fix the 403 error
+CSRF_TRUSTED_ORIGINS = ['https://web-production-1e213.up.railway.app']
 
 # --- APPLICATION DEFINITION ---
 
