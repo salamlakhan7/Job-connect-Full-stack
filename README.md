@@ -57,8 +57,9 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/Job-connect-sindhi.git
-   cd Job-connect-sindhi
+    git clone https://github.com/salamlakhan7/Job-connect-Full-stack.git
+    cd Job-connect-Full-stack
+
    ```
 
 2. **Create and activate virtual environment**
@@ -90,7 +91,8 @@
 
 6. **Collect static files**
    ```bash
-   python manage.py collectstatic
+   python manage.py collectstatic --noinput
+
    ```
 
 7. **Run the development server with WebSocket support**
@@ -134,7 +136,7 @@
 - **Django 5.2.8** - High-level Python web framework
 - **Django Channels 4.3.2** - WebSocket support for real-time features
 - **Daphne 4.2.1** - ASGI server for WebSocket handling
-- **SQLite** - Database (development)
+- **SQLite** - Database (development) , SQLite is used for local development. PostgreSQL is recommended for production.
 
 ### Frontend
 - **HTML5 & CSS3** - Structure and styling
@@ -244,7 +246,7 @@ graph LR
     I -->|Hire| J[Hired]
     I -->|Decline| F
 ```
-
+   If the diagram doesn’t render, view on GitHub desktop or browser.
 ---
 
 ## 🧪 Testing
