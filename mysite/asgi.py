@@ -31,20 +31,24 @@
 ##################option2 #########################
 import os
 import django
-
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 
+# Set the settings module before anything else
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 
-# 🔑 THIS MUST COME BEFORE importing routing / consumers
+# 🔑 Initialize Django fully before importing routing
 django.setup()
 
-import jobs.routing  # <-- import AFTER django.setup()
+# Import routing AFTER django.setup() to avoid registry errors
+import jobs.routing
 
 application = ProtocolTypeRouter({
+    # Handles standard HTTP requests
     "http": get_asgi_application(),
+    
+    # Handles real-time WebSocket connections for your Chat system
     "websocket": AuthMiddlewareStack(
         URLRouter(
             jobs.routing.websocket_urlpatterns
