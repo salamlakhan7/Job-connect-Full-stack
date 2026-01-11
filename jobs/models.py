@@ -201,7 +201,8 @@ class Interview(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Interview for {self.application.user.username} on {self.scheduled_date}"
+       # return f"Interview for {self.application.user.username} on {self.scheduled_date}"
+        return f"Interview for {self.application.applicant.user.username} on {self.scheduled_date}"
 
 
 
