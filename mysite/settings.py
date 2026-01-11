@@ -37,7 +37,7 @@ SESSION_COOKIE_HTTPONLY = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',
-    "jazzmin",
+    # "jazzmin",
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
