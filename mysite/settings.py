@@ -7,29 +7,30 @@ from pathlib import Path
 import os
 import dj_database_url
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- SECURITY SETTINGS ---
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-0pwhx+%(we1d!kwfp%3o+ibgir6+eq0bqzsdc0ifv&-x+fa*m4')
 
+# Keep DEBUG True for now to see errors if it fails; change to False later
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['web-production-1e213.up.railway.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['web-production-1e213.up.railway.app', 'localhost', '127.0.0.1', '.railway.app']
 
-# Critical Fix for Railway HTTPS and Admin Forms
+# CRITICAL FIX: Add both the specific domain and wildcards
 CSRF_TRUSTED_ORIGINS = [
     'https://web-production-1e213.up.railway.app',
     'https://*.railway.app'
 ]
 
+# Tell Django it's behind a proxy
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Unique Cookie Names to prevent Seeker/Admin conflict
-SESSION_COOKIE_NAME = 'jobconnect_admin_session'
-CSRF_COOKIE_NAME = 'jobconnect_admin_csrf'
+# Separate Admin cookies from User cookies
+SESSION_COOKIE_NAME = 'railway_admin_session_v2'
+CSRF_COOKIE_NAME = 'railway_admin_csrf_v2'
 
-# Security Handshake Settings
+# Security Handshake Settings for Production
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
@@ -39,7 +40,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 # --- APPLICATION DEFINITION ---
 
 INSTALLED_APPS = [
-    "jazzmin",  # Jazzmin MUST be above admin
+    "jazzmin",  # MUST be above admin
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -139,8 +140,6 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 APPEND_SLASH = True
-ADMIN_FORCE_LOGIN = True
-
 
 LOGIN_REDIRECT_URL = '/redirect_dashboard/'
 LOGOUT_REDIRECT_URL = '/'
@@ -152,23 +151,4 @@ JAZZMIN_SETTINGS = {
     "theme": "minty",
     "show_sidebar": True,
     "navigation_expanded": True,
-    "icons": {
-        "auth.user": "fas fa-user",
-        "jobs.userprofile": "fas fa-id-card",
-        "jobs.job": "fas fa-briefcase",
-        "jobs.application": "fas fa-file-alt",
-        "jobs.interview": "fas fa-video",
-        "jobs.chatroom": "fas fa-comments",
-        "jobs.chatmessage": "fas fa-envelope",
-        "jobs.chatattachment": "fas fa-paperclip",
-    },
 }
-
-
-import os
-if os.environ.get("RAILWAY_ENVIRONMENT"):
-    from django.core.management import call_command
-    try:
-        call_command("create_admin")
-    except:
-        pass
