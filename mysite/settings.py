@@ -139,6 +139,8 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 APPEND_SLASH = True
+ADMIN_FORCE_LOGIN = True
+
 
 LOGIN_REDIRECT_URL = '/redirect_dashboard/'
 LOGOUT_REDIRECT_URL = '/'
