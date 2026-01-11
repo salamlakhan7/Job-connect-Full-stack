@@ -163,3 +163,12 @@ JAZZMIN_SETTINGS = {
         "jobs.chatattachment": "fas fa-paperclip",
     },
 }
+
+
+import os
+if os.environ.get("RAILWAY_ENVIRONMENT"):
+    from django.core.management import call_command
+    try:
+        call_command("create_admin")
+    except:
+        pass
