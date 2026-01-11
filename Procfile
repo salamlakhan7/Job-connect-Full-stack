@@ -1,1 +1,1 @@
-web: python manage.py migrate && python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); u, _ = User.objects.get_or_create(username='admin'); u.is_staff=True; u.is_superuser=True; u.set_password('salam456'); u.save(); print('OWNER_ACCESS_GRANTED')" && daphne -b 0.0.0.0 -p $PORT mysite.asgi:application
+web: python manage.py migrate && daphne -b 0.0.0.0 -p $PORT mysite.asgi:application
