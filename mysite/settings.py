@@ -1,48 +1,51 @@
 """
 Django settings for mysite project.
-Optimized for Railway.app Deployment.
+Optimized for Railway.app Deployment with Fix for Admin Login.
 """
 
 from pathlib import Path
 import os
-import dj_database_url  # Essential for Railway PostgreSQL
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- SECURITY SETTINGS ---
-# Loads from Railway environment variables in production
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-0pwhx+%(we1d!kwfp%3o+ibgir6+eq0bqzsdc0ifv&-x+fa*m4')
 
-# Set DEBUG to False in production by default
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-# Allow local dev and your Railway domain
-# ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.railway.app']
-# Ensure scheme (https://) is included for CSRF_TRUSTED_ORIGINS
-#ALLOWED_HOSTS = ['web-production-1e213.up.railway.app', 'localhost', '127.0.0.1']
 ALLOWED_HOSTS = ['web-production-1e213.up.railway.app', 'localhost', '127.0.0.1']
-CSRF_TRUSTED_ORIGINS = ['https://web-production-1e213.up.railway.app']
+
+# Critical Fix for Railway HTTPS and Admin Forms
+CSRF_TRUSTED_ORIGINS = [
+    'https://web-production-1e213.up.railway.app',
+    'https://*.railway.app'
+]
+
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Unique Cookie Names to prevent Seeker/Admin conflict
+SESSION_COOKIE_NAME = 'jobconnect_admin_session'
+CSRF_COOKIE_NAME = 'jobconnect_admin_csrf'
+
+# Security Handshake Settings
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_SAVE_EVERY_REQUEST = True
 
-
-# SESSION_COOKIE_SECURE = True
-# CSRF_COOKIE_SECURE = True
-#CSRF_COOKIE_HTTPONLY = True
 # --- APPLICATION DEFINITION ---
 
 INSTALLED_APPS = [
+    "jazzmin",  # Jazzmin MUST be above admin
     'django.contrib.admin',
-    # "jazzmin",
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'whitenoise.runserver_nostatic', # Serves static files efficiently
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     "channels",
     'jobs',
@@ -50,7 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # MUST be here
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -79,9 +82,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'mysite.wsgi.application'
 ASGI_APPLICATION = "mysite.asgi.application"
 
-
 # --- DATABASE CONFIGURATION ---
-# Uses PostgreSQL on Railway, falls back to SQLite locally
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
@@ -89,9 +90,7 @@ DATABASES = {
     )
 }
 
-
 # --- CHANNELS & REDIS ---
-# Using Redis for production chat. Locally, uses In-Memory
 if not DEBUG:
     CHANNEL_LAYERS = {
         "default": {
@@ -108,14 +107,11 @@ else:
         }
     }
 
-
 # --- STATIC & MEDIA FILES ---
-
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "jobs" / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# WhiteNoise storage for compression and caching
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -129,7 +125,6 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # --- OTHER SETTINGS ---
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -148,7 +143,6 @@ APPEND_SLASH = True
 LOGIN_REDIRECT_URL = '/redirect_dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
-# JAZZMIN_SETTINGS stay exactly as you had them...
 JAZZMIN_SETTINGS = {
     "site_title": "JobConnect Admin",
     "site_header": "JobConnect Control Panel",
