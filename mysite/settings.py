@@ -27,6 +27,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
 CSRF_TRUSTED_ORIGINS = [
     'https://web-production-1e213.up.railway.app',
     'https://*.railway.app'
@@ -38,8 +39,8 @@ CSRF_TRUSTED_ORIGINS = [
 # --- APPLICATION DEFINITION ---
 
 INSTALLED_APPS = [
-    "jazzmin",
     'django.contrib.admin',
+    "jazzmin",
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -144,6 +145,8 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+APPEND_SLASH = True
 
 LOGIN_REDIRECT_URL = '/redirect_dashboard/'
 LOGOUT_REDIRECT_URL = '/'
