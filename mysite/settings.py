@@ -90,6 +90,7 @@ DATABASES = {
         conn_max_age=600
     )
 }
+# default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
 
 # --- CHANNELS & REDIS ---
 if not DEBUG:
