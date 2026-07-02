@@ -39,7 +39,7 @@ def _parse_json_response(content: str) -> dict:
     try:
         payload = json.loads(cleaned)
     except json.JSONDecodeError as exc:
-        logger.warning("Groq response was not valid JSON: %s", content[:500])
+        logger.warning("Groq returned invalid JSON.")
         raise GroqResponseError("Groq returned invalid JSON.") from exc
 
     if not isinstance(payload, dict):
