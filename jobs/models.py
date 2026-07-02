@@ -43,6 +43,35 @@ class UserProfile(models.Model):
         return f"{self.user.username} ({self.role})"
 
 
+class ResumeAnalysis(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    user_profile = models.OneToOneField(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name='resume_analysis'
+    )
+    resume_file = models.FileField(upload_to='resumes/', blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    extracted_text = models.TextField(blank=True)
+    parsed_data = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField(blank=True)
+    model_name = models.CharField(max_length=100, blank=True)
+    analyzed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Resume analyses'
+
+    def __str__(self):
+        return f"Resume analysis for {self.user_profile.user.username} ({self.status})"
+
+
 # class UserProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
 #     phone = models.CharField(max_length=15, blank=True)

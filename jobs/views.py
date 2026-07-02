@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.models import User
 from .models import UserProfile
+from .services.resume_analysis import analyze_uploaded_resume
 from .forms import JobForm
 from django.contrib.auth.decorators import login_required
 from .decorators import seeker_required, employer_required  # ✅ Add this line
@@ -335,6 +336,7 @@ def seeker_profile(request):
         # Save file to the resume field (Django handles storage to MEDIA_ROOT)
         profile.resume = uploaded
         profile.save()
+        analyze_uploaded_resume(profile)
         # Redirect back so user sees the updated resume link
         return redirect('seeker_profile')
 
@@ -344,6 +346,25 @@ def seeker_profile(request):
         # convenient fields (template expects user.userprofile.* and user.*)
     }
     return render(request, 'seeker_profile.html', context)
+
+
+@login_required
+@seeker_required
+def resume_analysis_detail(request):
+    profile = get_object_or_404(UserProfile, user=request.user, role='seeker')
+    analysis = getattr(profile, 'resume_analysis', None)
+    if analysis is None:
+        return JsonResponse({'status': 'not_found'}, status=404)
+
+    return JsonResponse({
+        'status': analysis.status,
+        'resume_file': analysis.resume_file.url if analysis.resume_file else '',
+        'parsed_data': analysis.parsed_data,
+        'error_message': analysis.error_message,
+        'model_name': analysis.model_name,
+        'analyzed_at': analysis.analyzed_at.isoformat() if analysis.analyzed_at else None,
+        'updated_at': analysis.updated_at.isoformat() if analysis.updated_at else None,
+    })
 
 
 @csrf_exempt  # AJAX POST from fetch; we still require authentication, so check request.user below
