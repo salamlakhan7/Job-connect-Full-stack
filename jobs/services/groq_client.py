@@ -49,6 +49,13 @@ def _parse_json_response(content: str) -> dict:
 
 
 def analyze_resume_with_groq(resume_text: str) -> tuple[dict, str]:
+    return complete_json_with_groq(
+        RESUME_ANALYSIS_SYSTEM_PROMPT,
+        build_resume_analysis_prompt(resume_text),
+    )
+
+
+def complete_json_with_groq(system_prompt: str, user_prompt: str) -> tuple[dict, str]:
     client = _load_groq_client()
     model = getattr(settings, 'GROQ_MODEL', 'llama-3.1-8b-instant')
 
@@ -56,15 +63,15 @@ def analyze_resume_with_groq(resume_text: str) -> tuple[dict, str]:
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {'role': 'system', 'content': RESUME_ANALYSIS_SYSTEM_PROMPT},
-                {'role': 'user', 'content': build_resume_analysis_prompt(resume_text)},
+                {'role': 'system', 'content': system_prompt},
+                {'role': 'user', 'content': user_prompt},
             ],
             temperature=0,
             response_format={'type': 'json_object'},
         )
     except Exception as exc:
-        logger.exception("Groq resume analysis request failed.")
-        raise GroqResponseError("Groq resume analysis request failed.") from exc
+        logger.exception("Groq JSON completion request failed.")
+        raise GroqResponseError("Groq JSON completion request failed.") from exc
 
     content = response.choices[0].message.content if response.choices else ''
     if not content:

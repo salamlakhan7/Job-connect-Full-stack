@@ -72,6 +72,37 @@ class ResumeAnalysis(models.Model):
         return f"Resume analysis for {self.user_profile.user.username} ({self.status})"
 
 
+class CareerAnalysis(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    resume_analysis = models.OneToOneField(
+        ResumeAnalysis,
+        on_delete=models.CASCADE,
+        related_name='career_analysis'
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    overall_score = models.PositiveSmallIntegerField(default=0)
+    ats_score = models.PositiveSmallIntegerField(default=0)
+    readiness_score = models.PositiveSmallIntegerField(default=0)
+    analysis_data = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField(blank=True)
+    model_name = models.CharField(max_length=100, blank=True)
+    prompt_version = models.CharField(max_length=50, blank=True)
+    analyzed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Career analyses'
+
+    def __str__(self):
+        return f"Career analysis for {self.resume_analysis.user_profile.user.username} ({self.status})"
+
+
 # class UserProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
 #     phone = models.CharField(max_length=15, blank=True)
