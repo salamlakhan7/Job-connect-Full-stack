@@ -2,6 +2,19 @@
 
 Job Connect AI primarily uses Django template views with session authentication. Several AI-related endpoints return JSON for dashboard panels and refresh actions.
 
+## Table of Contents
+
+- [Authentication](#authentication)
+- [Dashboards](#dashboards)
+- [Resume Analysis](#resume-analysis)
+- [Career Analysis](#career-analysis)
+- [Job Recommendations](#job-recommendations)
+- [Jobs](#jobs)
+- [Applications](#applications)
+- [Saved Jobs](#saved-jobs)
+- [Chat](#chat)
+- [Error and Access Patterns](#error-and-access-patterns)
+
 Base URL for local development:
 
 ```text
@@ -11,6 +24,13 @@ http://127.0.0.1:8000
 ## Authentication
 
 Authentication uses Django sessions.
+
+| Endpoint | Methods | Access | Purpose |
+| --- | --- | --- | --- |
+| `/login/` | `GET`, `POST` | Public | Authenticate users |
+| `/logout/` | `GET` | Authenticated | End the user session |
+| `/register/seeker/login` | `GET`, `POST` | Public | Register a candidate |
+| `/register/employer/` | `GET`, `POST` | Public | Register an employer |
 
 ### Login
 
@@ -50,6 +70,13 @@ POST /register/employer/
 
 ## Dashboards
 
+| Endpoint | Method | Access | Purpose |
+| --- | --- | --- | --- |
+| `/dashboard/` | `GET` | Authenticated | Role-based dashboard redirect |
+| `/redirect_dashboard/` | `GET` | Authenticated | Role-based dashboard redirect |
+| `/seeker/dashboard/` | `GET` | Seeker | Candidate dashboard |
+| `/employer/dashboard/` | `GET` | Employer | Employer dashboard |
+
 ### Dashboard Redirect
 
 ```http
@@ -78,6 +105,11 @@ GET /employer/dashboard/
 Requires a logged-in employer.
 
 ## Resume Analysis
+
+| Endpoint | Methods | Access | Purpose |
+| --- | --- | --- | --- |
+| `/seeker/profile/` | `GET`, `POST` | Seeker | View/update profile and upload resume |
+| `/seeker/profile/resume-analysis/` | `GET` | Seeker | Return stored resume analysis |
 
 ### Seeker Profile and Resume Upload
 
@@ -131,6 +163,11 @@ Notes:
 - It does not expose another user's analysis.
 
 ## Career Analysis
+
+| Endpoint | Methods | Access | Purpose |
+| --- | --- | --- | --- |
+| `/seeker/profile/career-analysis/` | `GET` | Seeker | Return stored career analysis |
+| `/seeker/profile/career-analysis/refresh/` | `POST` | Seeker | Regenerate career analysis |
 
 ### Career Analysis Detail
 
@@ -190,6 +227,12 @@ Example response:
 ## Job Recommendations
 
 Recommendation endpoints are seeker-only and scoped to the logged-in seeker.
+
+| Endpoint | Methods | Access | Purpose |
+| --- | --- | --- | --- |
+| `/seeker/jobs/recommendations/` | `GET` | Seeker | Return latest recommendation run |
+| `/seeker/jobs/recommendations/refresh/` | `POST` | Seeker | Generate a new recommendation run |
+| `/seeker/jobs/recommendations/<recommendation_id>/` | `GET` | Seeker | Return one scoped recommendation |
 
 ### Latest Recommendation Run
 
@@ -275,6 +318,17 @@ Returns one recommendation if it belongs to the logged-in seeker.
 
 ## Jobs
 
+| Endpoint | Methods | Access | Purpose |
+| --- | --- | --- | --- |
+| `/job/<job_id>/` | `GET` | Public | View job detail |
+| `/jobs/search/` | `GET` | Public | Search jobs |
+| `/search/` | `GET` | Public | Search jobs |
+| `/jobs/all/` | `GET` | Public or authenticated | List jobs |
+| `/employer/jobs/` | `GET` | Employer | List employer jobs |
+| `/employer/job/post/` | `GET`, `POST` | Employer | Create a job |
+| `/employer/job/<job_id>/edit/` | `GET`, `POST` | Owning employer | Edit a job |
+| `/employer/job/<job_id>/delete/` | `GET`, `POST` | Owning employer | Delete a job |
+
 ### Public Job Detail
 
 ```http
@@ -342,6 +396,15 @@ Requires the owning employer.
 
 ## Applications
 
+| Endpoint | Methods | Access | Purpose |
+| --- | --- | --- | --- |
+| `/job/<job_id>/apply/` | `GET`, `POST` | Seeker | Apply to a job |
+| `/seeker/applications/` | `GET` | Seeker | View candidate applications |
+| `/seeker/applied/` | `GET` | Seeker | View applied jobs |
+| `/employer/job/<job_id>/applicants/` | `GET` | Owning employer | View job applicants |
+| `/employer/job/<job_id>/applicant/<app_id>/status/` | `POST` | Employer | Update application status |
+| `/application/<app_id>/interview/` | `GET`, `POST` | Employer flow | Schedule interview |
+
 ### Apply to Job
 
 ```http
@@ -398,6 +461,13 @@ POST /application/<app_id>/interview/
 
 ## Saved Jobs
 
+| Endpoint | Method | Access | Purpose |
+| --- | --- | --- | --- |
+| `/job/<job_id>/save/` | `GET` | Seeker | Save a job |
+| `/job/<job_id>/unsave/` | `GET` | Seeker | Remove saved job |
+| `/seeker/saved/` | `GET` | Seeker | View saved jobs |
+| `/saved-jobs/` | `GET` | Seeker | View saved jobs |
+
 ```http
 GET /job/<job_id>/save/
 GET /job/<job_id>/unsave/
@@ -410,6 +480,14 @@ Requires a seeker account.
 ## Chat
 
 Chat uses Django views for room setup and Django Channels for real-time message transport.
+
+| Endpoint | Methods | Access | Purpose |
+| --- | --- | --- | --- |
+| `/chat/` | `GET` | Authenticated | List conversations |
+| `/chat/start/<application_id>/` | `GET` | Authenticated participant | Start chat from application |
+| `/chat/job/<job_id>/` | `GET` | Authenticated | Start chat from job |
+| `/chat/<conversation_id>/` | `GET` | Authenticated participant | Open chat room |
+| `/chat/upload/` | `POST` | Authenticated | Upload chat attachment |
 
 ### Chat List
 
@@ -461,3 +539,8 @@ daphne -b 127.0.0.1 -p 8000 mysite.asgi:application
 - JSON endpoints return `403` for invalid roles.
 - Missing AI records commonly return `404`.
 - Failed AI operations return safe error messages and should not expose private resume text or embeddings.
+
+## Related Documentation
+
+- [Architecture](architecture.md)
+- [Deployment Guide](deployment.md)

@@ -2,6 +2,19 @@
 
 This guide covers local and Railway deployment considerations for Job Connect AI.
 
+## Table of Contents
+
+- [Environment Variables](#environment-variables)
+- [Dependencies](#dependencies)
+- [Running Locally](#running-locally)
+- [Static and Media Files](#static-and-media-files)
+- [Railway Deployment](#railway-deployment)
+- [ChromaDB Notes](#chromadb-notes)
+- [Sentence Transformer Notes](#sentence-transformer-notes)
+- [Groq Notes](#groq-notes)
+- [Database Migrations](#database-migrations)
+- [Production Checklist](#production-checklist)
+
 ## Environment Variables
 
 Configure these variables in your local shell, `.env` loader, or deployment platform.
@@ -41,9 +54,21 @@ Sentence Transformers may download model files on first use. Plan for network ac
 
 ## Running Locally
 
+Windows:
+
 ```bash
 python -m venv venv
 venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+macOS/Linux:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py createsuperuser
@@ -112,6 +137,21 @@ python manage.py collectstatic --noinput
 ```
 
 The existing `Procfile` should be reviewed against the desired process type. Use an ASGI-capable server when WebSockets are required.
+
+### Suggested Deployment Flow
+
+```mermaid
+flowchart TD
+    GitHub[GitHub Repository] --> Railway[Railway Project]
+    Railway --> Install[Install requirements.txt]
+    Install --> Env[Load Environment Variables]
+    Env --> Migrate[Run Django Migrations]
+    Migrate --> Static[Collect Static Files]
+    Static --> App[Start Django ASGI/WSGI Process]
+    App --> DB[(Database)]
+    App --> Redis[(Redis for Channels)]
+    App --> Chroma[(Persistent ChromaDB Path)]
+```
 
 ## ChromaDB Notes
 
@@ -188,3 +228,8 @@ Current AI-related models include:
 - Migrations applied
 - `python manage.py check` passes
 - Smoke-test login, resume upload, job posting, chat, AI analysis, embeddings, and recommendations
+
+## Related Documentation
+
+- [Architecture](architecture.md)
+- [API Documentation](api.md)

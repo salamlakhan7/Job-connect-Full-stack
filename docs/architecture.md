@@ -2,32 +2,42 @@
 
 This document describes the current Job Connect AI architecture after the Resume Intelligence, Career Analysis, Embedding Infrastructure, and Semantic Job Matching phases.
 
+## Table of Contents
+
+- [Overall System Architecture](#overall-system-architecture)
+- [Django Architecture](#django-architecture)
+- [Django App Structure](#django-app-structure)
+- [AI Service Layer](#ai-service-layer)
+- [Resume Intelligence Flow](#resume-intelligence-flow)
+- [Career Analysis Flow](#career-analysis-flow)
+- [Embedding Infrastructure](#embedding-infrastructure)
+- [Semantic Job Matching Flow](#semantic-job-matching-flow)
+- [Failure Handling](#failure-handling)
+- [Security Boundaries](#security-boundaries)
+
 ## Overall System Architecture
 
 Job Connect AI is a Django monolith organized around one primary app, `jobs`, and one project package, `mysite`.
 
-```text
-Client browser
-  |
-  | HTTP requests
-  | WebSocket chat
-  v
-mysite ASGI/WSGI entrypoints
-  |
-  v
-jobs app
-  |
-  |-- Django views for pages and JSON endpoints
-  |-- Django templates for candidate/employer UI
-  |-- Channels consumers for chat
-  |-- Service modules for AI and vector workflows
-  |-- ORM models for users, jobs, applications, chat, and AI metadata
-  |
-  +--> SQL database: SQLite locally or DATABASE_URL in deployment
-  +--> Media storage: local filesystem
-  +--> Groq API: structured LLM analysis
-  +--> ChromaDB: vector storage
-  +--> Redis: production channel layer when DEBUG=False
+```mermaid
+flowchart TD
+    Browser[Client Browser] -->|HTTP| URLConf[Django URL Routing]
+    Browser -->|WebSocket| ASGI[ASGI Application]
+
+    URLConf --> Views[Django Views]
+    Views --> Templates[Django Templates]
+    Views --> Services[Service Layer]
+    Views --> ORM[Django ORM]
+
+    ASGI --> Consumers[Channels Consumers]
+    Consumers --> ORM
+
+    ORM --> DB[(SQLite or DATABASE_URL Database)]
+    Services --> Groq[Groq API]
+    Services --> ST[Sentence Transformers]
+    Services --> Chroma[(ChromaDB)]
+    Consumers --> Redis[(Redis in Production)]
+    Views --> Media[(Media Storage)]
 ```
 
 The project keeps AI business logic in `jobs/services/` so views remain thin wrappers around authentication, request parsing, and response formatting.
@@ -36,22 +46,45 @@ The project keeps AI business logic in `jobs/services/` so views remain thin wra
 
 ### Project Package: `mysite`
 
-- `settings.py`: installed apps, database, static/media, Channels, Groq, embeddings, and ChromaDB configuration.
-- `urls.py`: root URL configuration.
-- `asgi.py`: ASGI app used by Daphne and Channels.
-- `wsgi.py`: WSGI app for traditional HTTP serving.
+| File | Responsibility |
+| --- | --- |
+| `settings.py` | Installed apps, database, static/media, Channels, Groq, embeddings, and ChromaDB configuration |
+| `urls.py` | Root URL configuration |
+| `asgi.py` | ASGI app used by Daphne and Channels |
+| `wsgi.py` | WSGI app for traditional HTTP serving |
 
 ### Application Package: `jobs`
 
-- `models.py`: domain models for profiles, jobs, applications, saved jobs, chat, resume analysis, career analysis, embeddings, and recommendations.
-- `views.py`: page rendering and JSON endpoints.
-- `urls.py`: app URL patterns.
-- `decorators.py`: role-based access guards.
-- `forms.py`: profile and job forms.
-- `consumers.py`: WebSocket chat handling.
-- `routing.py`: Channels WebSocket route configuration.
-- `templates/`: Django templates for public, seeker, employer, and chat screens.
-- `services/`: AI, parsing, embedding, vector, and matching logic.
+| File or Folder | Responsibility |
+| --- | --- |
+| `models.py` | Domain models for profiles, jobs, applications, saved jobs, chat, resume analysis, career analysis, embeddings, and recommendations |
+| `views.py` | Page rendering and JSON endpoints |
+| `urls.py` | App URL patterns |
+| `decorators.py` | Role-based access guards |
+| `forms.py` | Profile and job forms |
+| `consumers.py` | WebSocket chat handling |
+| `routing.py` | Channels WebSocket route configuration |
+| `templates/` | Django templates for public, seeker, employer, and chat screens |
+| `services/` | AI, parsing, embedding, vector, and matching logic |
+
+## Django App Structure
+
+```mermaid
+flowchart TD
+    JobsApp[jobs app] --> Models[models.py]
+    JobsApp --> Views[views.py]
+    JobsApp --> URLs[urls.py]
+    JobsApp --> Forms[forms.py]
+    JobsApp --> Decorators[decorators.py]
+    JobsApp --> Templates[templates]
+    JobsApp --> Services[services]
+    JobsApp --> Channels[consumers.py and routing.py]
+
+    Services --> Resume[Resume Intelligence]
+    Services --> Career[Career Analysis]
+    Services --> Embeddings[Embedding Infrastructure]
+    Services --> Matching[Semantic Matching]
+```
 
 ## AI Service Layer
 
@@ -84,27 +117,16 @@ Key boundaries:
 
 ## Resume Intelligence Flow
 
-```text
-Candidate uploads resume
-  |
-  v
-UserProfile.resume stores original file
-  |
-  v
-resume_analysis.analyze_uploaded_resume()
-  |
-  +--> resume_parser.extract_text_from_pdf()
-  |
-  +--> groq_client.analyze_resume_text()
-  |
-  v
-ResumeAnalysis
-  - status
-  - resume_file
-  - extracted_text
-  - parsed_data
-  - model_name
-  - error_message
+```mermaid
+flowchart TD
+    Upload[Candidate Uploads Resume] --> Store[Store Original File]
+    Store --> Parse[Extract PDF Text]
+    Parse --> Prompt[Build Resume Extraction Prompt]
+    Prompt --> Groq[Groq JSON Response]
+    Groq --> Save[Save ResumeAnalysis]
+    Save --> Completed{Completed?}
+    Completed -->|Yes| Career[Trigger Career Analysis]
+    Completed -->|No| SafeFail[Preserve Upload and Store Safe Error]
 ```
 
 Privacy design:
@@ -116,25 +138,13 @@ Privacy design:
 
 ## Career Analysis Flow
 
-```text
-Completed ResumeAnalysis
-  |
-  v
-career_analysis.analyze_career_from_resume_analysis()
-  |
-  +--> career_prompts builds JSON-only prompt
-  +--> groq_client sends request
-  +--> career_scoring normalizes scores
-  |
-  v
-CareerAnalysis
-  - status
-  - overall_score
-  - ats_score
-  - readiness_score
-  - analysis_data
-  - prompt_version
-  - model_name
+```mermaid
+flowchart TD
+    ResumeAnalysis[Completed ResumeAnalysis] --> Prompt[Build Career Analysis Prompt]
+    Prompt --> Groq[Groq JSON Response]
+    Groq --> Scoring[Normalize Scores]
+    Scoring --> Save[Save CareerAnalysis]
+    Save --> CandidateEmbedding[Trigger Candidate Embedding]
 ```
 
 Career analysis depends on structured resume data and does not duplicate resume basics already stored by `ResumeAnalysis`.
@@ -142,6 +152,20 @@ Career analysis depends on structured resume data and does not duplicate resume 
 ## Embedding Infrastructure
 
 Embeddings prepare the platform for semantic AI features without requiring PostgreSQL or external embedding APIs.
+
+```mermaid
+flowchart LR
+    ResumeData[ResumeAnalysis.parsed_data] --> CandidateText[Normalized Candidate Text]
+    CareerData[CareerAnalysis.analysis_data] --> CandidateText
+    CandidateText --> CandidateHash[Candidate Hash]
+    CandidateHash --> CandidateModel[Sentence Transformer]
+    CandidateModel --> CandidateChroma[(candidate_embeddings)]
+
+    JobFields[Job Title, Description, Company, Location] --> JobText[Normalized Job Text]
+    JobText --> JobHash[Job Hash]
+    JobHash --> JobModel[Sentence Transformer]
+    JobModel --> JobChroma[(job_embeddings)]
+```
 
 ### Candidate Embeddings
 
@@ -183,24 +207,17 @@ Embedding services compute hashes from normalized source content. If the hash is
 
 ## Semantic Job Matching Flow
 
-```text
-Seeker requests recommendation refresh
-  |
-  v
-job_matching.refresh_job_recommendations()
-  |
-  +--> load completed CandidateEmbedding metadata
-  +--> retrieve candidate vector from ChromaDB
-  +--> query job_embeddings collection
-  +--> exclude applied jobs where possible
-  +--> compute deterministic scores
-  +--> build grounded explanation_data
-  |
-  v
-JobRecommendationRun
-  |
-  v
-JobRecommendation rows
+```mermaid
+flowchart TD
+    Refresh[Seeker Refreshes Recommendations] --> CandidateMeta[Load Completed CandidateEmbedding]
+    CandidateMeta --> CandidateVector[Retrieve Candidate Vector]
+    CandidateVector --> Query[Query ChromaDB job_embeddings]
+    Query --> Filter[Filter Invalid or Applied Jobs]
+    Filter --> Score[Compute Deterministic Scores]
+    Score --> Explain[Build Explanation Data]
+    Explain --> Run[Save JobRecommendationRun]
+    Run --> Rows[Save JobRecommendation Rows]
+    Rows --> Dashboard[Render Dashboard Panel]
 ```
 
 Final score formula:
@@ -215,12 +232,12 @@ final_score =
 
 Recommendation explanations include:
 
-- Matched skills
-- Missing skills
-- Score breakdown
-- Confidence
-- Short summary
-- Next steps
+- Matched skills.
+- Missing skills.
+- Score breakdown.
+- Confidence.
+- Short summary.
+- Next steps.
 
 The LLM is not used to determine ranking.
 
