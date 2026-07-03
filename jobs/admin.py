@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
-from .models import UserProfile, ResumeAnalysis, CareerAnalysis, CandidateEmbedding, JobEmbedding, Job, Application, Interview
+from .models import UserProfile, ResumeAnalysis, CareerAnalysis, CandidateEmbedding, JobEmbedding, JobRecommendationRun, JobRecommendation, Job, Application, Interview
 from .models import ChatRoom, ChatMessage, ChatAttachment
 
 
@@ -28,6 +28,8 @@ admin.site.register(ResumeAnalysis)
 admin.site.register(CareerAnalysis)
 admin.site.register(CandidateEmbedding)
 admin.site.register(JobEmbedding)
+admin.site.register(JobRecommendationRun)
+admin.site.register(JobRecommendation)
 admin.site.register(Job)
 admin.site.register(Application)
 admin.site.register(Interview)

@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from .models import UserProfile
 from .services.career_analysis import analyze_career_from_resume_analysis
 from .services.job_embedding import generate_job_embedding
+from .services.job_matching import latest_recommendation_run, refresh_job_recommendations as refresh_job_recommendations_service
 from .services.resume_analysis import analyze_uploaded_resume
 from .forms import JobForm
 from django.contrib.auth.decorators import login_required
@@ -29,7 +30,7 @@ from django.contrib import messages
 from .models import Job, Application, UserProfile  # update import as needed
 from django.contrib.auth.decorators import login_required
 
-from .models import Job, Application, UserProfile, SavedJob
+from .models import Job, Application, UserProfile, SavedJob, JobRecommendation
 
 # Create your views here.
 
@@ -97,6 +98,12 @@ def seeker_dashboard(request):
     recommended_jobs = Job.objects.all().order_by('-created_at')
     resume_analysis = getattr(seeker_profile, 'resume_analysis', None)
     career_analysis = getattr(resume_analysis, 'career_analysis', None) if resume_analysis else None
+    recommendation_run = latest_recommendation_run(seeker_profile)
+    ai_recommendations = (
+        recommendation_run.recommendations.select_related('job').order_by('rank')[:5]
+        if recommendation_run and recommendation_run.status == 'completed'
+        else []
+    )
 
     context = {
         "applied_jobs": applied_jobs,
@@ -104,6 +111,8 @@ def seeker_dashboard(request):
         "interviews": interviews,
         "recommended_jobs": recommended_jobs,
         "career_analysis": career_analysis,
+        "recommendation_run": recommendation_run,
+        "ai_recommendations": ai_recommendations,
     }
 
     return render(request, "seeker_dashboard.html", context)
@@ -431,6 +440,82 @@ def refresh_career_analysis(request):
         'analyzed_at': career_analysis.analyzed_at.isoformat() if career_analysis.analyzed_at else None,
         'updated_at': career_analysis.updated_at.isoformat() if career_analysis.updated_at else None,
     })
+
+
+def _recommendation_payload(recommendation):
+    job = recommendation.job
+    return {
+        'id': recommendation.id,
+        'rank': recommendation.rank,
+        'job': {
+            'id': job.id,
+            'title': job.title,
+            'company_name': job.company_name,
+            'location': job.location,
+        },
+        'final_score': recommendation.final_score,
+        'semantic_score': recommendation.semantic_score,
+        'skills_score': recommendation.skills_score,
+        'readiness_score': recommendation.readiness_score,
+        'ats_score': recommendation.ats_score,
+        'confidence': recommendation.confidence,
+        'explanation_data': recommendation.explanation_data,
+        'created_at': recommendation.created_at.isoformat() if recommendation.created_at else None,
+    }
+
+
+def _recommendation_run_payload(run):
+    return {
+        'id': run.id,
+        'status': run.status,
+        'total_jobs_considered': run.total_jobs_considered,
+        'error_message': run.error_message,
+        'started_at': run.started_at.isoformat() if run.started_at else None,
+        'completed_at': run.completed_at.isoformat() if run.completed_at else None,
+        'created_at': run.created_at.isoformat() if run.created_at else None,
+        'recommendations': [
+            _recommendation_payload(recommendation)
+            for recommendation in run.recommendations.select_related('job').order_by('rank')
+        ],
+    }
+
+
+@login_required
+def job_recommendations_latest(request):
+    profile = getattr(request.user, 'userprofile', None)
+    if profile is None or profile.role != 'seeker':
+        return JsonResponse({'status': 'forbidden'}, status=403)
+
+    run = latest_recommendation_run(profile)
+    if run is None:
+        return JsonResponse({'status': 'not_found'}, status=404)
+
+    return JsonResponse(_recommendation_run_payload(run))
+
+
+@login_required
+@require_POST
+def refresh_job_recommendations(request):
+    profile = getattr(request.user, 'userprofile', None)
+    if profile is None or profile.role != 'seeker':
+        return JsonResponse({'status': 'forbidden'}, status=403)
+
+    run = refresh_job_recommendations_service(profile)
+    return JsonResponse(_recommendation_run_payload(run))
+
+
+@login_required
+def job_recommendation_detail(request, recommendation_id):
+    profile = getattr(request.user, 'userprofile', None)
+    if profile is None or profile.role != 'seeker':
+        return JsonResponse({'status': 'forbidden'}, status=403)
+
+    recommendation = get_object_or_404(
+        JobRecommendation.objects.select_related('job', 'run'),
+        id=recommendation_id,
+        user_profile=profile,
+    )
+    return JsonResponse(_recommendation_payload(recommendation))
 
 
 @csrf_exempt  # AJAX POST from fetch; we still require authentication, so check request.user below

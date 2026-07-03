@@ -76,3 +76,16 @@ def delete_embedding(collection_name: str, item_id: str):
     except Exception as exc:
         logger.exception("Failed to delete ChromaDB embedding.")
         raise VectorStoreError("Failed to delete ChromaDB embedding.") from exc
+
+
+def query_embeddings(collection_name: str, query_embedding: list[float], n_results: int = 10):
+    collection = _get_collection(collection_name)
+    try:
+        return collection.query(
+            query_embeddings=[query_embedding],
+            n_results=n_results,
+            include=['distances', 'metadatas'],
+        )
+    except Exception as exc:
+        logger.exception("Failed to query ChromaDB embeddings.")
+        raise VectorStoreError("Failed to query ChromaDB embeddings.") from exc

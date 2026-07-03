@@ -78,6 +78,9 @@ urlpatterns = [
    
   path('jobs/all/', views.all_jobs, name="all_jobs"),
   path('seeker/applications/', views.my_applications, name='my_applications'),
+  path('seeker/jobs/recommendations/', views.job_recommendations_latest, name='job_recommendations_latest'),
+  path('seeker/jobs/recommendations/refresh/', views.refresh_job_recommendations, name='refresh_job_recommendations'),
+  path('seeker/jobs/recommendations/<int:recommendation_id>/', views.job_recommendation_detail, name='job_recommendation_detail'),
   
   path('chat/', views.chat_list_view, name='chat_list'),
   path('chat/start/<int:application_id>/', views.chat_start_view, name='chat_start'),
