@@ -43,6 +43,126 @@ class UserProfile(models.Model):
         return f"{self.user.username} ({self.role})"
 
 
+class ResumeAnalysis(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    user_profile = models.OneToOneField(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name='resume_analysis'
+    )
+    resume_file = models.FileField(upload_to='resumes/', blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    extracted_text = models.TextField(blank=True)
+    parsed_data = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField(blank=True)
+    model_name = models.CharField(max_length=100, blank=True)
+    analyzed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Resume analyses'
+
+    def __str__(self):
+        return f"Resume analysis for {self.user_profile.user.username} ({self.status})"
+
+
+class CareerAnalysis(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    resume_analysis = models.OneToOneField(
+        ResumeAnalysis,
+        on_delete=models.CASCADE,
+        related_name='career_analysis'
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    overall_score = models.PositiveSmallIntegerField(default=0)
+    ats_score = models.PositiveSmallIntegerField(default=0)
+    readiness_score = models.PositiveSmallIntegerField(default=0)
+    analysis_data = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField(blank=True)
+    model_name = models.CharField(max_length=100, blank=True)
+    prompt_version = models.CharField(max_length=50, blank=True)
+    analyzed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = 'Career analyses'
+
+    def __str__(self):
+        return f"Career analysis for {self.resume_analysis.user_profile.user.username} ({self.status})"
+
+
+class CandidateEmbedding(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    user_profile = models.OneToOneField(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name='candidate_embedding'
+    )
+    resume_analysis = models.ForeignKey(
+        ResumeAnalysis,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='candidate_embeddings'
+    )
+    career_analysis = models.ForeignKey(
+        CareerAnalysis,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='candidate_embeddings'
+    )
+    embedding_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    embedding_hash = models.CharField(max_length=64, blank=True)
+    embedding_model = models.CharField(max_length=100, blank=True)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Candidate embedding for {self.user_profile.user.username} ({self.embedding_status})"
+
+
+class JobEmbedding(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    job = models.OneToOneField(
+        'Job',
+        on_delete=models.CASCADE,
+        related_name='embedding_metadata'
+    )
+    embedding_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    embedding_hash = models.CharField(max_length=64, blank=True)
+    embedding_model = models.CharField(max_length=100, blank=True)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Job embedding for {self.job.title} ({self.embedding_status})"
+
+
 # class UserProfile(models.Model):
 #     user = models.OneToOneField(User, on_delete=models.CASCADE)
 #     phone = models.CharField(max_length=15, blank=True)

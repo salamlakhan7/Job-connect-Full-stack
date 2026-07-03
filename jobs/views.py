@@ -3,9 +3,13 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.models import User
 from .models import UserProfile
+from .services.career_analysis import analyze_career_from_resume_analysis
+from .services.job_embedding import generate_job_embedding
+from .services.resume_analysis import analyze_uploaded_resume
 from .forms import JobForm
 from django.contrib.auth.decorators import login_required
 from .decorators import seeker_required, employer_required  # ✅ Add this line
+from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login
 from django.shortcuts import  get_object_or_404
 from .forms import ProfileForm, SkillForm, EducationForm, ExperienceForm, SocialLinkForm
@@ -91,12 +95,15 @@ def seeker_dashboard(request):
 
     # Recommended Jobs (for now show all active jobs)
     recommended_jobs = Job.objects.all().order_by('-created_at')
+    resume_analysis = getattr(seeker_profile, 'resume_analysis', None)
+    career_analysis = getattr(resume_analysis, 'career_analysis', None) if resume_analysis else None
 
     context = {
         "applied_jobs": applied_jobs,
         "saved_jobs": saved_jobs,
         "interviews": interviews,
         "recommended_jobs": recommended_jobs,
+        "career_analysis": career_analysis,
     }
 
     return render(request, "seeker_dashboard.html", context)
@@ -335,6 +342,7 @@ def seeker_profile(request):
         # Save file to the resume field (Django handles storage to MEDIA_ROOT)
         profile.resume = uploaded
         profile.save()
+        analyze_uploaded_resume(profile)
         # Redirect back so user sees the updated resume link
         return redirect('seeker_profile')
 
@@ -344,6 +352,85 @@ def seeker_profile(request):
         # convenient fields (template expects user.userprofile.* and user.*)
     }
     return render(request, 'seeker_profile.html', context)
+
+
+@login_required
+@seeker_required
+def resume_analysis_detail(request):
+    profile = get_object_or_404(UserProfile, user=request.user, role='seeker')
+    analysis = getattr(profile, 'resume_analysis', None)
+    if analysis is None:
+        return JsonResponse({'status': 'not_found'}, status=404)
+
+    return JsonResponse({
+        'status': analysis.status,
+        'resume_file': analysis.resume_file.url if analysis.resume_file else '',
+        'parsed_data': analysis.parsed_data,
+        'error_message': analysis.error_message,
+        'model_name': analysis.model_name,
+        'analyzed_at': analysis.analyzed_at.isoformat() if analysis.analyzed_at else None,
+        'updated_at': analysis.updated_at.isoformat() if analysis.updated_at else None,
+    })
+
+
+@login_required
+def career_analysis_detail(request):
+    profile = getattr(request.user, 'userprofile', None)
+    if profile is None or profile.role != 'seeker':
+        return JsonResponse({'status': 'forbidden'}, status=403)
+
+    resume_analysis = getattr(profile, 'resume_analysis', None)
+    if resume_analysis is None:
+        return JsonResponse({'status': 'not_found'}, status=404)
+
+    career_analysis = getattr(resume_analysis, 'career_analysis', None)
+    if career_analysis is None:
+        return JsonResponse({'status': 'not_found'}, status=404)
+
+    return JsonResponse({
+        'status': career_analysis.status,
+        'overall_score': career_analysis.overall_score,
+        'ats_score': career_analysis.ats_score,
+        'readiness_score': career_analysis.readiness_score,
+        'analysis_data': career_analysis.analysis_data,
+        'error_message': career_analysis.error_message,
+        'model_name': career_analysis.model_name,
+        'prompt_version': career_analysis.prompt_version,
+        'analyzed_at': career_analysis.analyzed_at.isoformat() if career_analysis.analyzed_at else None,
+        'updated_at': career_analysis.updated_at.isoformat() if career_analysis.updated_at else None,
+    })
+
+
+@login_required
+@require_POST
+def refresh_career_analysis(request):
+    profile = getattr(request.user, 'userprofile', None)
+    if profile is None or profile.role != 'seeker':
+        return JsonResponse({'status': 'forbidden'}, status=403)
+
+    resume_analysis = getattr(profile, 'resume_analysis', None)
+    if resume_analysis is None:
+        return JsonResponse({'status': 'not_found'}, status=404)
+
+    if resume_analysis.status != 'completed':
+        return JsonResponse({
+            'status': 'resume_analysis_not_ready',
+            'resume_analysis_status': resume_analysis.status,
+        }, status=400)
+
+    career_analysis = analyze_career_from_resume_analysis(resume_analysis)
+    return JsonResponse({
+        'status': career_analysis.status,
+        'overall_score': career_analysis.overall_score,
+        'ats_score': career_analysis.ats_score,
+        'readiness_score': career_analysis.readiness_score,
+        'analysis_data': career_analysis.analysis_data,
+        'error_message': career_analysis.error_message,
+        'model_name': career_analysis.model_name,
+        'prompt_version': career_analysis.prompt_version,
+        'analyzed_at': career_analysis.analyzed_at.isoformat() if career_analysis.analyzed_at else None,
+        'updated_at': career_analysis.updated_at.isoformat() if career_analysis.updated_at else None,
+    })
 
 
 @csrf_exempt  # AJAX POST from fetch; we still require authentication, so check request.user below
@@ -441,7 +528,7 @@ def post_job(request):
         location = request.POST.get("location")
         description = request.POST.get("description")
 
-        Job.objects.create(
+        job = Job.objects.create(
             employer=request.user,
             employer_profile=UserProfile.objects.get(user=request.user),
             company_name=company_name,
@@ -449,6 +536,7 @@ def post_job(request):
             location=location,
             description=description
         )
+        generate_job_embedding(job)
 
         messages.success(request, "Job posted successfully!")
         return redirect("post_job")
@@ -469,6 +557,7 @@ def edit_job(request, job_id):
         job.location = request.POST.get("location")
         # job.salary = request.POST.get("salary")
         job.save()
+        generate_job_embedding(job)
 
         messages.success(request, "Job updated successfully!")
         return redirect("employer_jobs")

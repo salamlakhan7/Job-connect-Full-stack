@@ -126,6 +126,14 @@ STORAGES = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# --- AI / GROQ SETTINGS ---
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
+GROQ_MODEL = os.environ.get('GROQ_MODEL', 'llama-3.1-8b-instant')
+
+# --- EMBEDDING / VECTOR STORE SETTINGS ---
+EMBEDDING_MODEL = os.environ.get('EMBEDDING_MODEL', 'all-MiniLM-L6-v2')
+CHROMA_DB_PATH = os.environ.get('CHROMA_DB_PATH', str(BASE_DIR / 'chroma_db'))
+
 # --- OTHER SETTINGS ---
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

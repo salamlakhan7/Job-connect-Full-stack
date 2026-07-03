@@ -27,6 +27,9 @@ urlpatterns = [
     #job Seeker profile
     path('seeker/profile/', views.seeker_profile, name='seeker_profile'),
     path('seeker/profile/update/', views.update_seeker_profile, name='update_seeker_profile'),
+    path('seeker/profile/resume-analysis/', views.resume_analysis_detail, name='resume_analysis_detail'),
+    path('seeker/profile/career-analysis/', views.career_analysis_detail, name='career_analysis_detail'),
+    path('seeker/profile/career-analysis/refresh/', views.refresh_career_analysis, name='refresh_career_analysis'),
     
     # Role Dashboards
     path('accounts/logout/', redirect_logout), 
