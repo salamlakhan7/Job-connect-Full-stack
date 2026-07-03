@@ -94,6 +94,10 @@
                 <!-- Navigation Links -->
                 <div class="hidden md:flex items-center space-x-8">
                     {% if user.is_authenticated %}
+                    {% if user.userprofile.role == 'seeker' %}
+                    <a href="{% url 'seeker_dashboard' %}"
+                        class="{% if request.path == '/seeker/dashboard/' %}text-blue-600 font-semibold{% else %}text-gray-700 hover:text-blue-600 font-medium{% endif %} transition">Dashboard</a>
+                    {% endif %}
                     <a href="{% url 'all_jobs' %}"
                         class="text-gray-700 hover:text-blue-600 font-medium transition">Browse Jobs</a>
                     <a href="{% url 'my_applications' %}"
