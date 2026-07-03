@@ -115,6 +115,60 @@
         </div>
 
 
+        <!-- AI Recommended Jobs -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-10">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+                <div>
+                    <h2 class="text-2xl font-semibold text-gray-800">AI Recommended Jobs</h2>
+                    <p class="text-sm text-gray-500 mt-1">Semantic matches from your latest resume and career analysis.</p>
+                </div>
+                {% if recommendation_run %}
+                <span class="text-sm px-3 py-1 rounded-full bg-gray-100 text-gray-700 self-start md:self-auto">
+                    {{ recommendation_run.get_status_display }}
+                </span>
+                {% endif %}
+            </div>
+
+            {% if ai_recommendations %}
+            <div class="space-y-4">
+                {% for recommendation in ai_recommendations %}
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">{{ recommendation.job.title }}</h3>
+                            <p class="text-sm text-gray-500">
+                                {{ recommendation.job.company_name }} • {{ recommendation.job.location }}
+                            </p>
+                            <p class="text-sm text-gray-700 mt-2">{{ recommendation.explanation_data.summary }}</p>
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                {% for skill in recommendation.explanation_data.matched_skills|slice:":4" %}
+                                <span class="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">{{ skill }}</span>
+                                {% endfor %}
+                                {% for skill in recommendation.explanation_data.missing_skills|slice:":3" %}
+                                <span class="text-xs bg-red-50 text-red-700 px-2 py-1 rounded-full">{{ skill }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="md:text-right shrink-0">
+                            <p class="text-2xl font-bold text-blue-600">{{ recommendation.final_score }}</p>
+                            <p class="text-xs uppercase text-gray-500">{{ recommendation.confidence }} confidence</p>
+                            <a href="{% url 'job_detail' recommendation.job.id %}"
+                                class="inline-block mt-3 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% elif recommendation_run and recommendation_run.status == 'failed' %}
+            <p class="text-sm text-red-600">AI job recommendations are unavailable right now. Try refreshing later.</p>
+            {% else %}
+            <p class="text-sm text-gray-500">Refresh recommendations after your resume and embeddings are ready.</p>
+            {% endif %}
+        </div>
+
+
         <!-- Recommended Jobs -->
         <div class="bg-white rounded-xl shadow-lg p-6">
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">Recently uploaded Jobs for You</h2>

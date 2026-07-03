@@ -294,6 +294,90 @@ class SavedJob(models.Model):
     def __str__(self):
         return f"{self.user_profile.user.username} saved {self.job.title}"
 
+
+class JobRecommendationRun(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    user_profile = models.ForeignKey(
+        'UserProfile',
+        on_delete=models.CASCADE,
+        related_name='recommendation_runs'
+    )
+    candidate_embedding = models.ForeignKey(
+        'CandidateEmbedding',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='recommendation_runs'
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    total_jobs_considered = models.PositiveIntegerField(default=0)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user_profile', '-created_at']),
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"Recommendation run for {self.user_profile.user.username} ({self.status})"
+
+
+class JobRecommendation(models.Model):
+    CONFIDENCE_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+
+    run = models.ForeignKey(
+        JobRecommendationRun,
+        on_delete=models.CASCADE,
+        related_name='recommendations'
+    )
+    user_profile = models.ForeignKey(
+        'UserProfile',
+        on_delete=models.CASCADE,
+        related_name='job_recommendations'
+    )
+    job = models.ForeignKey(
+        'Job',
+        on_delete=models.CASCADE,
+        related_name='recommendations'
+    )
+    rank = models.PositiveIntegerField()
+    final_score = models.PositiveSmallIntegerField(default=0)
+    semantic_score = models.PositiveSmallIntegerField(default=0)
+    skills_score = models.PositiveSmallIntegerField(default=0)
+    readiness_score = models.PositiveSmallIntegerField(default=0)
+    ats_score = models.PositiveSmallIntegerField(default=0)
+    confidence = models.CharField(max_length=20, choices=CONFIDENCE_CHOICES, default='medium')
+    explanation_data = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['run', 'job'], name='unique_recommendation_per_run_job'),
+        ]
+        indexes = [
+            models.Index(fields=['user_profile', 'rank']),
+            models.Index(fields=['run', 'rank']),
+            models.Index(fields=['job']),
+        ]
+        ordering = ['rank']
+
+    def __str__(self):
+        return f"{self.user_profile.user.username} -> {self.job.title} ({self.final_score})"
+
 # class Message(models.Model):
 #     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
 #     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
