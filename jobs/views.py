@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from .models import UserProfile
 from .services.career_analysis import analyze_career_from_resume_analysis
+from .services.job_embedding import generate_job_embedding
 from .services.resume_analysis import analyze_uploaded_resume
 from .forms import JobForm
 from django.contrib.auth.decorators import login_required
@@ -527,7 +528,7 @@ def post_job(request):
         location = request.POST.get("location")
         description = request.POST.get("description")
 
-        Job.objects.create(
+        job = Job.objects.create(
             employer=request.user,
             employer_profile=UserProfile.objects.get(user=request.user),
             company_name=company_name,
@@ -535,6 +536,7 @@ def post_job(request):
             location=location,
             description=description
         )
+        generate_job_embedding(job)
 
         messages.success(request, "Job posted successfully!")
         return redirect("post_job")
@@ -555,6 +557,7 @@ def edit_job(request, job_id):
         job.location = request.POST.get("location")
         # job.salary = request.POST.get("salary")
         job.save()
+        generate_job_embedding(job)
 
         messages.success(request, "Job updated successfully!")
         return redirect("employer_jobs")

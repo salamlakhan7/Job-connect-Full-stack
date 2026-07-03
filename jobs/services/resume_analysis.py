@@ -5,6 +5,7 @@ from django.utils import timezone
 from jobs.models import ResumeAnalysis
 
 from .career_analysis import analyze_career_from_resume_analysis
+from .candidate_embedding import generate_candidate_embedding
 from .groq_client import analyze_resume_with_groq
 from .resume_parser import extract_text_from_resume
 
@@ -57,5 +58,6 @@ def analyze_uploaded_resume(user_profile) -> ResumeAnalysis:
         'analyzed_at',
         'updated_at',
     ])
+    generate_candidate_embedding(user_profile)
     analyze_career_from_resume_analysis(analysis)
     return analysis

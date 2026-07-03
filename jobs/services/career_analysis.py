@@ -10,6 +10,7 @@ from .career_prompts import (
     build_career_analysis_prompt,
 )
 from .career_scoring import clamp_score, normalize_career_analysis_payload
+from .candidate_embedding import generate_candidate_embedding
 from .groq_client import complete_json_with_groq
 
 logger = logging.getLogger(__name__)
@@ -85,4 +86,5 @@ def analyze_career_from_resume_analysis(resume_analysis) -> CareerAnalysis:
         'analyzed_at',
         'updated_at',
     ])
+    generate_candidate_embedding(resume_analysis.user_profile)
     return career_analysis
