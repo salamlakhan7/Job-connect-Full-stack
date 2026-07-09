@@ -5,6 +5,7 @@ from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.auth import get_user_model
 from .models import ChatRoom, ChatMessage, ChatAttachment
+from .chat_permissions import can_access_chat_room
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -21,10 +22,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        is_allowed = await self.is_participant(user.id, self.room_id)
+        is_allowed = await self.is_chat_allowed(user.id, self.room_id)
         if not is_allowed:
             logger.warning(f"User {user.id} not allowed in chat room {self.room_id}")
-            await self.close()
+            await self.close(code=4403)
             return
 
         await self.channel_layer.group_add(
@@ -42,6 +43,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         try:
+            user = self.scope["user"]
+            if not await self.is_chat_allowed(user.id, self.room_id):
+                await self.send(text_data=json.dumps({
+                    "action": "error",
+                    "message": "Chat is no longer available for this application status."
+                }))
+                await self.close(code=4403)
+                return
+
             data = json.loads(text_data)
             action = data.get("action", "send")
             
@@ -71,8 +81,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message_text = data.get("content", "")
             msg_type = data.get("type", "text")
             attachments = data.get("attachments", []) # List of dicts {file_path, name, size, etc}
-            user = self.scope["user"]
-
             logger.info(f"User {user.id} sending message in room {self.room_id}: {message_text[:50]}")
 
             # Save to DB
@@ -123,11 +131,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # =====================
 
     @database_sync_to_async
-    def is_participant(self, user_id, room_id):
+    def is_chat_allowed(self, user_id, room_id):
         try:
-            room = ChatRoom.objects.get(id=room_id)
-            return room.employer_id == user_id or room.seeker_id == user_id
-        except ChatRoom.DoesNotExist:
+            room = ChatRoom.objects.select_related('employer', 'seeker').get(id=room_id)
+            user = User.objects.get(id=user_id)
+            return can_access_chat_room(user, room)
+        except (ChatRoom.DoesNotExist, User.DoesNotExist):
             return False
 
     @database_sync_to_async

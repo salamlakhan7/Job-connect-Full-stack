@@ -1,35 +1,57 @@
-<!-- FILE: templates/employer/employer_base.html -->
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Employer | {{ title }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Employer | Job Connect{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="{% static 'css/design-system.css' %}" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
 </head>
+<body class="jc-page min-h-screen">
+    <header class="bg-white border-b sticky top-0 z-40" style="border-color: var(--jc-border);">
+        <div class="jc-container jc-app-header flex flex-wrap items-center justify-between gap-4 py-3">
+            <a href="{% url 'employer_dashboard' %}" class="jc-text-h4 flex items-center gap-2">
+                <span class="jc-kpi-icon"><i data-lucide="briefcase-business" class="jc-icon"></i></span>
+                <span>Job Connect Employer</span>
+            </a>
+            <nav class="jc-app-nav" aria-label="Employer navigation">
+                <a href="{% url 'employer_dashboard' %}" class="jc-nav-link gap-2 {% if request.resolver_match.url_name == 'employer_dashboard' %}jc-nav-link-active{% endif %}"><i data-lucide="layout-dashboard" class="jc-icon"></i>Dashboard</a>
+                <a href="{% url 'employer_jobs' %}" class="jc-nav-link gap-2 {% if request.resolver_match.url_name == 'employer_jobs' or request.resolver_match.url_name == 'edit_job' or request.resolver_match.url_name == 'delete_job' or request.resolver_match.url_name == 'view_applicants' or request.resolver_match.url_name == 'schedule_interview' %}jc-nav-link-active{% endif %}"><i data-lucide="briefcase" class="jc-icon"></i>My Jobs</a>
+                <a href="{% url 'post_job' %}" class="jc-nav-link gap-2 {% if request.resolver_match.url_name == 'post_job' %}jc-nav-link-active{% endif %}"><i data-lucide="circle-plus" class="jc-icon"></i>Post Job</a>
+                <a href="{% url 'chat_list' %}" class="jc-nav-link gap-2 {% if request.resolver_match.url_name == 'chat_list' or request.resolver_match.url_name == 'chat_room' %}jc-nav-link-active{% endif %}"><i data-lucide="messages-square" class="jc-icon"></i>Messages</a>
+                <a href="{% url 'logout' %}" class="jc-btn jc-btn-sm jc-btn-secondary gap-2"><i data-lucide="log-out" class="jc-icon"></i>Logout</a>
+            </nav>
+        </div>
+    </header>
 
-<body class="bg-gray-100">
-
-<div class="flex min-h-screen">
-
-    <!-- Sidebar -->
-    <aside class="w-64 bg-blue-700 text-white p-6 space-y-6">
-        <h2 class="text-2xl font-bold">Employer Panel</h2>
-
-        <nav class="space-y-3">
-            <a href="{% url 'employer_dashboard' %}" class="block hover:text-yellow-300">Dashboard</a>
-            {% comment %} <a href="{% url 'employer_jobs' %}" class="block hover:text-yellow-300">My Job Posts</a> {% endcomment %}
-            <a href="{% url 'post_job' %}" class="block hover:text-yellow-300">Post New Job</a>
-            <a href="{% url 'logout' %}" class="block text-red-300 mt-8">Logout</a>
+    <div class="jc-container py-4">
+        <nav class="flex flex-wrap items-center gap-2 jc-text-small" aria-label="Breadcrumb">
+            <a href="{% url 'employer_dashboard' %}" style="color: var(--jc-primary);">Employer</a>
+            <span aria-hidden="true">/</span>
+            {% block breadcrumbs %}<span>Dashboard</span>{% endblock %}
         </nav>
-    </aside>
+    </div>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-8">
-        {% block content %}
-        {% endblock %}
+    {% if messages %}
+    <div class="jc-container space-y-2" role="status">
+        {% for message in messages %}
+        <div class="jc-alert {% if 'error' in message.tags %}jc-alert-danger{% elif 'warning' in message.tags %}jc-alert-warning{% elif 'success' in message.tags %}jc-alert-success{% else %}jc-alert-info{% endif %}">
+            <strong>{% if 'error' in message.tags %}Error{% elif 'warning' in message.tags %}Warning{% elif 'success' in message.tags %}Success{% else %}Info{% endif %}:</strong>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="jc-container py-6">
+        {% block content %}{% endblock %}
     </main>
-
-</div>
-
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.lucide) window.lucide.createIcons();
+        });
+    </script>
 </body>
 </html>

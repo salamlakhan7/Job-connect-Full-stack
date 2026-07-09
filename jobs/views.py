@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.shortcuts import render
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -7,6 +9,7 @@ from .services.career_analysis import analyze_career_from_resume_analysis
 from .services.job_embedding import generate_job_embedding
 from .services.job_matching import latest_recommendation_run, refresh_job_recommendations as refresh_job_recommendations_service
 from .services.resume_analysis import analyze_uploaded_resume
+from .services.cover_letter import CoverLetterGenerationError, generate_cover_letter
 from .forms import JobForm
 from django.contrib.auth.decorators import login_required
 from .decorators import seeker_required, employer_required  # ✅ Add this line
@@ -21,8 +24,9 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
 from django.core.files.uploadedfile import UploadedFile
+from django.utils import timezone
+from django.db import IntegrityError
 
 from .models import UserProfile
 from django.shortcuts import render, redirect, get_object_or_404
@@ -30,7 +34,13 @@ from django.contrib import messages
 from .models import Job, Application, UserProfile  # update import as needed
 from django.contrib.auth.decorators import login_required
 
-from .models import Job, Application, UserProfile, SavedJob, JobRecommendation
+from .models import Job, Application, UserProfile, SavedJob, JobRecommendation, Interview
+from .chat_permissions import (
+    accessible_chat_rooms,
+    can_access_chat_room,
+    can_chat_for_application,
+    eligible_application_exists,
+)
 
 # Create your views here.
 
@@ -87,12 +97,9 @@ def seeker_dashboard(request):
     # Jobs the seeker has applied to
     applied_jobs = Application.objects.filter(applicant=seeker_profile).count()
 
-    # Saved jobs (if you want, for now = 0)
-    # saved_jobs = 0
     saved_jobs = SavedJob.objects.filter(user_profile=seeker_profile).count()
 
-    # Interviews scheduled (no field yet)
-    interviews = 0
+    interviews = Interview.objects.filter(application__applicant=seeker_profile).count()
 
     # Recommended Jobs (for now show all active jobs)
     recommended_jobs = Job.objects.all().order_by('-created_at')
@@ -100,7 +107,7 @@ def seeker_dashboard(request):
     career_analysis = getattr(resume_analysis, 'career_analysis', None) if resume_analysis else None
     recommendation_run = latest_recommendation_run(seeker_profile)
     ai_recommendations = (
-        recommendation_run.recommendations.select_related('job').order_by('rank')[:5]
+        _displayable_recommendations(seeker_profile, recommendation_run)[:5]
         if recommendation_run and recommendation_run.status == 'completed'
         else []
     )
@@ -110,6 +117,7 @@ def seeker_dashboard(request):
         "saved_jobs": saved_jobs,
         "interviews": interviews,
         "recommended_jobs": recommended_jobs,
+        "resume_analysis": resume_analysis,
         "career_analysis": career_analysis,
         "recommendation_run": recommendation_run,
         "ai_recommendations": ai_recommendations,
@@ -118,39 +126,110 @@ def seeker_dashboard(request):
     return render(request, "seeker_dashboard.html", context)
 
 
-def job_detail(request, job_id):
-    job = get_object_or_404(Job, id=job_id)
-    return render(request, 'job_detail.html', {'job': job})
+def _displayable_recommendations(user_profile, recommendation_run):
+    applied_job_ids = Application.objects.filter(
+        applicant=user_profile
+    ).values_list('job_id', flat=True)
+    return (
+        recommendation_run.recommendations
+        .select_related('job')
+        .filter(final_score__gte=40)
+        .exclude(job_id__in=applied_job_ids)
+        .order_by('rank')
+    )
 
 
-from .models import Job, Application
+@login_required
+@seeker_required
+def ai_recommendations(request):
+    from django.core.paginator import Paginator
+
+    profile = request.user.userprofile
+    recommendation_run = latest_recommendation_run(profile)
+    recommendations = (
+        _displayable_recommendations(profile, recommendation_run)
+        if recommendation_run and recommendation_run.status == 'completed'
+        else JobRecommendation.objects.none()
+    )
+    page = Paginator(recommendations, 5).get_page(request.GET.get('page', 1))
+
+    return render(request, 'seeker/ai_recommendations.html', {
+        'recommendation_run': recommendation_run,
+        'recommendations': page,
+    })
 
 @login_required
 @seeker_required
 def apply_job(request, job_id):
     job = get_object_or_404(Job, id=job_id)
     seeker_profile = request.user.userprofile
-
-    # Prevent duplicate applications
-    if Application.objects.filter(job=job, applicant=seeker_profile).exists():
-        messages.warning(request, "You have already applied for this job.")
-        return redirect('job_detail', job_id=job.id)
+    application = Application.objects.filter(
+        job=job,
+        applicant=seeker_profile,
+    ).first()
 
     if request.method == "POST":
         resume = request.FILES.get('resume')
-        cover_letter = request.POST.get('cover_letter', '')
+        cover_letter = request.POST.get('cover_letter', '').strip()
 
-        Application.objects.create(
-            job=job,
-            applicant=seeker_profile,
-            resume=resume,
-            cover_letter=cover_letter
-        )
-
-        messages.success(request, "Your application has been submitted successfully!")
+        if application is None:
+            resume = resume or seeker_profile.resume
+            if not resume:
+                messages.error(request, "Upload a resume before submitting your application.")
+                return render(request, "apply_job.html", {
+                    "job": job,
+                    "cover_letter": cover_letter,
+                })
+            Application.objects.create(
+                job=job,
+                applicant=seeker_profile,
+                resume=resume,
+                cover_letter=cover_letter,
+            )
+            messages.success(request, "Your application has been submitted successfully!")
+        else:
+            if resume:
+                application.resume = resume
+            elif not application.resume and seeker_profile.resume:
+                application.resume = seeker_profile.resume
+            application.cover_letter = cover_letter
+            application.save(update_fields=['resume', 'cover_letter'])
+            messages.success(request, "Your application has been updated successfully!")
         return redirect('seeker_dashboard')
 
-    return render(request, "apply_job.html", {"job": job})
+    return render(request, "apply_job.html", {
+        "job": job,
+        "application": application,
+        "cover_letter": application.cover_letter if application else '',
+    })
+
+
+@login_required
+@seeker_required
+@require_POST
+def generate_job_cover_letter(request, job_id):
+    job = get_object_or_404(Job, id=job_id)
+    profile = request.user.userprofile
+
+    try:
+        cover_letter, model_name = generate_cover_letter(profile, job)
+    except CoverLetterGenerationError as exc:
+        return JsonResponse({'status': 'not_ready', 'message': str(exc)}, status=400)
+    except Exception:
+        return JsonResponse({
+            'status': 'generation_failed',
+            'message': 'Cover letter generation is unavailable right now.',
+        }, status=502)
+
+    return JsonResponse({
+        'status': 'success',
+        'cover_letter': cover_letter,
+        'model_name': model_name,
+        'existing_application': Application.objects.filter(
+            job=job,
+            applicant=profile,
+        ).exists(),
+    })
 
 
 # @login_required
@@ -159,6 +238,7 @@ def apply_job(request, job_id):
 #     return render(request, 'employer_dashboard.html')
 
 @login_required
+@employer_required
 def employer_dashboard(request):
     user = request.user
 
@@ -169,23 +249,19 @@ def employer_dashboard(request):
         messages.error(request, "Employer profile not found.")
         return redirect('home')
 
-    # Fetch ALL jobs created by this employer
     jobs = Job.objects.filter(employer=user).order_by('-created_at')
-
-    # Active job posts (for now: all)
     active_jobs_count = jobs.count()
-
-    # Total applications across all jobs posted by this employer
-    applications_count = Application.objects.filter(job__in=jobs).count()
-
-    # Pending reviews logic (example: no status field in your model)
-    pending_reviews = applications_count  # OR assign 0 if you want
+    employer_applications = Application.objects.filter(job__employer=user)
     
     context = {
         "jobs": jobs,
         "active_jobs_count": active_jobs_count,
-        "applications_count": applications_count,
-        "pending_reviews": pending_reviews,
+        "applications_count": employer_applications.count(),
+        "interviews_count": Interview.objects.filter(
+            application__job__employer=user
+        ).count(),
+        "shortlisted_count": employer_applications.filter(status='shortlisted').count(),
+        "hired_count": employer_applications.filter(status='hired').count(),
     }
 
     return render(request, "employer_dashboard.html", context)
@@ -358,6 +434,9 @@ def seeker_profile(request):
     # GET (or other non-POST) – render page
     context = {
         'profile': profile,
+        'applied_jobs': Application.objects.filter(applicant=profile).count(),
+        'saved_jobs': SavedJob.objects.filter(user_profile=profile).count(),
+        'interviews': Interview.objects.filter(application__applicant=profile).count(),
         # convenient fields (template expects user.userprofile.* and user.*)
     }
     return render(request, 'seeker_profile.html', context)
@@ -453,12 +532,14 @@ def _recommendation_payload(recommendation):
             'company_name': job.company_name,
             'location': job.location,
         },
+        'match_percentage': recommendation.final_score,
         'final_score': recommendation.final_score,
         'semantic_score': recommendation.semantic_score,
         'skills_score': recommendation.skills_score,
         'readiness_score': recommendation.readiness_score,
         'ats_score': recommendation.ats_score,
         'confidence': recommendation.confidence,
+        'ai_explanation': recommendation.explanation_data.get('summary', ''),
         'explanation_data': recommendation.explanation_data,
         'created_at': recommendation.created_at.isoformat() if recommendation.created_at else None,
     }
@@ -518,13 +599,12 @@ def job_recommendation_detail(request, recommendation_id):
     return JsonResponse(_recommendation_payload(recommendation))
 
 
-@csrf_exempt  # AJAX POST from fetch; we still require authentication, so check request.user below
 @login_required
 @seeker_required
 def update_seeker_profile(request):
     """
     AJAX endpoint for modal-based updates.
-    Expects JSON body: { "name": "Full Name", "tags": "tag1 | tag2", "location": "City, Country" }
+    Expects JSON body containing name, tags, location, and summary.
     Responds with JSON {"status":"success"} (or error).
     """
     if request.method != 'POST':
@@ -541,6 +621,16 @@ def update_seeker_profile(request):
     if profile is None:
         # if for some reason profile is missing, create it with role seeker
         profile = UserProfile.objects.create(user=user, role='seeker')
+
+    summary = payload.get('summary')
+    if summary is not None:
+        summary = summary.strip()
+        if len(summary) > 700:
+            return JsonResponse({
+                'status': 'validation_error',
+                'field': 'summary',
+                'message': 'Professional summary must be 700 characters or fewer.',
+            }, status=400)
 
     # Update name
     full_name = payload.get('name', '').strip()
@@ -565,6 +655,9 @@ def update_seeker_profile(request):
     if location is not None:
         profile.location = location.strip()
 
+    if summary is not None:
+        profile.summary = summary
+
     # Save profile changes
     profile.save()
 
@@ -574,6 +667,7 @@ def update_seeker_profile(request):
         'name': f"{user.first_name} {user.last_name}".strip(),
         'tags': profile.tags,
         'location': profile.location,
+        'summary': profile.summary,
     })
 
     return render(request, 'seeker_profile.html', context)
@@ -599,8 +693,15 @@ from django.contrib import messages
 @login_required
 @employer_required
 def employer_jobs(request):
+    from django.db.models import Count
+
     profile = get_object_or_404(UserProfile, user=request.user, role="employer")
-    jobs = Job.objects.filter(employer=request.user)
+    jobs = (
+        Job.objects
+        .filter(employer=request.user)
+        .annotate(applications_count=Count('application'))
+        .order_by('-created_at')
+    )
     return render(request, "employer/employer_jobs.html", {"jobs": jobs})
 
 
@@ -665,7 +766,7 @@ def delete_job(request, job_id):
         messages.success(request, "Job deleted successfully!")
         return redirect("employer_jobs")
 
-    return render(request, "employer/delete_job_confirm.html", {"job": job})
+    return render(request, "employer/delete_job.html", {"job": job})
 
 
 # -----------------------
@@ -674,70 +775,45 @@ def delete_job(request, job_id):
 @login_required
 @employer_required  # keep your decorator
 def view_applicants(request, job_id):
+    from django.db.models import Exists, OuterRef
+
     job = get_object_or_404(Job, id=job_id)
     # ensure current user owns this job
     if job.employer != request.user:
         messages.error(request, "Not authorized.")
         return redirect('employer_dashboard')
 
-    applicants = Application.objects.filter(job=job).select_related('applicant__user').order_by('-applied_at')
+    applicants = (
+        Application.objects
+        .filter(job=job)
+        .select_related('applicant__user')
+        .annotate(
+            has_interview=Exists(
+                Interview.objects.filter(application_id=OuterRef('pk'))
+            )
+        )
+        .order_by('-applied_at')
+    )
     return render(request, 'view_applicants.html', {
         'job': job,
         'applicants': applicants
     })
 
-@login_required
-@employer_required
-def update_application_status(request, job_id, app_id):
-    job = get_object_or_404(Job, id=job_id)
-    if job.employer != request.user:
-        messages.error(request, "Not authorized.")
-        return redirect('employer_dashboard')
-
-    app = get_object_or_404(Application, id=app_id, job=job)
-    if request.method == 'POST':
-        new_status = request.POST.get('status')
-        if new_status in dict(Application.STATUS_CHOICES):
-            app.status = new_status
-            app.save()
-            messages.success(request, "Status updated.")
-    return redirect('view_applicants', job_id=job.id)
-
-
-@login_required
-def save_job(request, job_id):
-    seeker = getattr(request.user, 'userprofile', None)
-    if not seeker:
-        messages.error(request, "Please complete profile.")
-        return redirect('job_detail', job_id=job_id)
-    job = get_object_or_404(Job, id=job_id)
-    SavedJob.objects.get_or_create(user_profile=seeker, job=job)
-    messages.success(request, "Job saved.")
-    return redirect('job_detail', job_id=job_id)
-
-@login_required
-def unsave_job(request, job_id):
-    seeker = getattr(request.user, 'userprofile', None)
-    job = get_object_or_404(Job, id=job_id)
-    SavedJob.objects.filter(user_profile=seeker, job=job).delete()
-    messages.success(request, "Job removed from saved.")
-    return redirect('seeker_saved_jobs')
-
-@login_required
-def seeker_saved_jobs(request):
-    seeker = getattr(request.user, 'userprofile', None)
-    saved = SavedJob.objects.filter(user_profile=seeker).select_related('job').order_by('-saved_at')
-    return render(request, 'seeker/saved_jobs.html', {'saved': saved})
-
-
 def job_detail(request, job_id):
     job = get_object_or_404(Job, id=job_id)
     saved_jobs_ids = []
+    can_chat = False
     if request.user.is_authenticated:
         seeker = getattr(request.user, 'userprofile', None)
         if seeker:
             saved_jobs_ids = list(SavedJob.objects.filter(user_profile=seeker).values_list('job_id', flat=True))
-    return render(request, 'job_detail.html', {'job': job, 'saved_jobs_ids': saved_jobs_ids})
+            if seeker.role == 'seeker':
+                can_chat = eligible_application_exists(job.employer, request.user, job=job)
+    return render(request, 'job_detail.html', {
+        'job': job,
+        'saved_jobs_ids': saved_jobs_ids,
+        'can_chat': can_chat,
+    })
 
 
 from django.db.models import Q
@@ -761,14 +837,9 @@ def job_search(request):
     return render(request, 'search_results.html',
                   {'jobs': jobs_page, 'q': q, 'location': location})
 
-
-
-
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Job, SavedJob
-
-from .models import Job, SavedJob, UserProfile
-
+@login_required
+@seeker_required
+@require_POST
 def save_job(request, job_id):
     job = get_object_or_404(Job, id=job_id)
     user_profile = get_object_or_404(UserProfile, user=request.user)
@@ -781,6 +852,9 @@ def save_job(request, job_id):
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
+@login_required
+@seeker_required
+@require_POST
 def unsave_job(request, job_id):
     job = get_object_or_404(Job, id=job_id)
     user_profile = get_object_or_404(UserProfile, user=request.user)
@@ -794,6 +868,8 @@ def unsave_job(request, job_id):
 
 
 
+@login_required
+@seeker_required
 def saved_jobs(request):
     user_profile = get_object_or_404(UserProfile, user=request.user)
 
@@ -854,19 +930,36 @@ def schedule_interview(request, app_id):
         messages.error(request, "Not authorized.")
         return redirect('employer_dashboard')
 
-    # Prevent duplicate interviews (since OneToOne)
-    if hasattr(application, "interview"):
+    if Interview.objects.filter(application=application).exists():
         messages.error(request, "Interview already scheduled for this application.")
         return redirect('view_applicants', job_id=application.job.id)
 
     if request.method == "POST":
-        Interview.objects.create(
-            application=application,
-            employer=request.user,                           # NEW
-            date=request.POST.get("date"),
-            meeting_link=request.POST.get("meeting_link", ""),  # NEW
-            notes=request.POST.get("notes", "")
+        scheduled_at = datetime.strptime(
+            f"{request.POST.get('date')} {request.POST.get('time')}",
+            "%Y-%m-%d %H:%M"
         )
+        if settings.USE_TZ:
+            scheduled_at = timezone.make_aware(scheduled_at, timezone.get_current_timezone())
+
+        interview_type = request.POST.get("interview_type", "").strip()
+        location = {
+            "video": "Video Call",
+            "phone": "Phone Call",
+            "in-person": "In-Person",
+        }.get(interview_type, interview_type or "Not specified")
+
+        try:
+            Interview.objects.create(
+                application=application,
+                employer=request.user,
+                scheduled_date=scheduled_at,
+                location=location,
+                message=request.POST.get("notes", "").strip()
+            )
+        except IntegrityError:
+            messages.error(request, "Interview already scheduled for this application.")
+            return redirect('view_applicants', job_id=application.job.id)
 
         # Update application status
         application.status = "interview"
@@ -908,6 +1001,14 @@ def chat_upload(request):
     Save uploaded file and return JSON:
     { file_url: '/media/...', file_path: 'chat/<conv>/filename', content_type, size, name }
     """
+    conversation_id = request.POST.get('conversation_id')
+    if not conversation_id:
+        return JsonResponse({'error': 'conversation_id is required'}, status=400)
+
+    room = get_object_or_404(ChatRoom, id=conversation_id)
+    if not can_access_chat_room(request.user, room):
+        return JsonResponse({'error': 'Chat is not available for this application status.'}, status=403)
+
     f = request.FILES.get('file')
     if not f:
         return HttpResponseBadRequest("No file uploaded.")
@@ -917,12 +1018,7 @@ def chat_upload(request):
     if f.size > max_mb * 1024 * 1024:
         return HttpResponseBadRequest("File too large")
 
-    # Save under media/chat/temp/<user> or accept conversation_id
-    conv = request.POST.get('conversation_id')
-    if conv:
-        folder = f'chat/{conv}'
-    else:
-        folder = f'chat/temp/{request.user.id}'
+    folder = f'chat/{room.id}'
 
     filename = default_storage.save(os.path.join(folder, f.name), f)
     file_url = default_storage.url(filename)   # usually /media/...
@@ -946,18 +1042,22 @@ from django.shortcuts import redirect
 @login_required
 @login_required
 def chat_list_view(request):
-    # Find the most recent conversation
-    latest_room = ChatRoom.objects.filter(
-        Q(employer=request.user) | Q(seeker=request.user)
-    ).order_by('-created_at').first()
+    latest_room = accessible_chat_rooms(request.user).order_by('-created_at').first()
 
     if latest_room:
         return redirect('chat_room', conversation_id=latest_room.id)
 
     # If no conversations, show empty list (we can reuse the same template or a specific one)
     # For now, let's just render the 'chat_list.html' which we will update to look like an empty state
+    profile = getattr(request.user, 'userprofile', None)
+    base_template = (
+        'employer_base.html'
+        if profile and profile.role == 'employer'
+        else 'base.html'
+    )
     return render(request, 'employer/chat_list.html', {
-        'conversations': [] 
+        'base_template': base_template,
+        'conversations': [],
     })
 
 # @login_required
@@ -988,8 +1088,8 @@ def chat_list_view(request):
 def chat_room_view(request, conversation_id):
     room = get_object_or_404(ChatRoom, id=conversation_id)
 
-    if request.user not in [room.employer, room.seeker]:
-        messages.error(request, "You are not allowed here.")
+    if not can_access_chat_room(request.user, room):
+        messages.error(request, "Chat is not available for this application status.")
         return redirect('chat_list')
     
          #important 
@@ -1002,9 +1102,7 @@ def chat_room_view(request, conversation_id):
        #important 
        
     # Fetch all conversations for the sidebar
-    rooms = ChatRoom.objects.filter(
-        Q(employer=request.user) | Q(seeker=request.user)
-    ).order_by('-created_at')
+    rooms = accessible_chat_rooms(request.user).order_by('-created_at')
 
     conversations = []
     for r in rooms:
@@ -1063,11 +1161,15 @@ from .models import Application, ChatRoom
 
 @login_required
 def chat_start_view(request, application_id):
-    application = get_object_or_404(Application, id=application_id)
+    application = get_object_or_404(
+        Application.objects.select_related('job__employer', 'applicant__user'),
+        id=application_id,
+    )
     employer = application.job.employer
     seeker = application.applicant.user
     
-    if request.user not in [employer, seeker]:
+    if not can_chat_for_application(application, request.user):
+        messages.error(request, "Chat is available after an application is shortlisted.")
         return redirect('chat_list')
 
     chat_room, created = ChatRoom.objects.get_or_create(employer=employer, seeker=seeker)
@@ -1084,12 +1186,14 @@ def start_chat_from_job(request, job_id):
         messages.warning(request, "You cannot chat with yourself.")
         return redirect('job_detail', job_id=job.id)
 
-    # Ensure profile role
     profile = getattr(seeker, 'userprofile', None)
-    if profile and profile.role == 'employer':
-         # If an employer views another's job, treated as just user? 
-         # Or prevent? Let's allow for now as "user".
-         pass
+    if profile is None or profile.role != 'seeker':
+        messages.error(request, "Only job seekers can start this conversation.")
+        return redirect('job_detail', job_id=job.id)
+
+    if not eligible_application_exists(employer, seeker, job=job):
+        messages.error(request, "Chat is available after your application is shortlisted.")
+        return redirect('job_detail', job_id=job.id)
 
     # Create/Get room
     chat_room, created = ChatRoom.objects.get_or_create(employer=employer, seeker=seeker)

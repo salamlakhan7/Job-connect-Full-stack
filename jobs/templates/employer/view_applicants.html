@@ -105,6 +105,7 @@
                             Download Resume
                         </a>
                         {% endif %}
+                        {% if app.status == 'shortlisted' or app.status == 'interview' or app.status == 'hired' %}
                         <a href="{% url 'chat_start' app.id %}"
                             class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition flex items-center">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,6 +115,7 @@
                             </svg>
                             Start Chat
                         </a>
+                        {% endif %}
                         <a href="{% url 'schedule_interview' app.id %}"
                             class="px-6 py-3 border-2 border-green-500 text-green-600 rounded-xl font-semibold hover:bg-green-50 transition flex items-center">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,13 +1,22 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+.coverage
+htmlcov/
 
 # Django
 db.sqlite3
+*.sqlite3
 media/
 staticfiles/
 chroma_db/
+*.log
 
 # Virtual Environment
 venv/
 .env
+.env.*
+!.env.example

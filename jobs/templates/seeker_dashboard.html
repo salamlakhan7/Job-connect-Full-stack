@@ -2,198 +2,342 @@
 {% load static %}
 
 {% block content %}
-<section class="min-h-screen bg-gray-50 py-12">
-    <div class="max-w-6xl mx-auto px-4">
-        <h1 class="text-3xl font-bold text-blue-700 mb-8">Welcome, {{ user.first_name|default:user.username }} 👋</h1>
-
-        <!-- Summary Cards -->
-        <div class="grid md:grid-cols-3 gap-6 mb-10">
-
-            <!-- Applied Jobs -->
-            <div class="bg-white shadow-lg rounded-xl p-6 border-t-4 border-blue-600">
-                <h3 class="text-lg font-semibold text-gray-700">Applied Jobs</h3>
-                <p class="text-3xl font-bold text-blue-600 mt-3">{{ applied_jobs }}</p>
-            </div>
-
-            <!-- Saved Jobs -->
-            <div class="bg-white shadow-lg rounded-xl p-6 border-t-4 border-green-600">
-                <h3 class="text-lg font-semibold text-gray-700">Saved Jobs</h3>
-                <p class="text-3xl font-bold text-green-600 mt-3">{{ saved_jobs }}</p>
-            </div>
-
-            <!-- Interviews Scheduled -->
-            <div class="bg-white shadow-lg rounded-xl p-6 border-t-4 border-purple-600">
-                <h3 class="text-lg font-semibold text-gray-700">Interviews Scheduled</h3>
-                <p class="text-3xl font-bold text-purple-600 mt-3">{{ interviews }}</p>
-            </div>
-
+<section class="jc-page min-h-screen py-10">
+    <div class="jc-container">
+        <div class="jc-page-header">
+            <p class="jc-text-caption">Seeker Dashboard</p>
+            <h1 class="jc-page-header-title">Welcome, {{ user.first_name|default:user.username }}</h1>
+            <p class="jc-page-header-subtitle">Track your applications, resume intelligence, and AI job recommendations in one place.</p>
         </div>
 
-
-        <!-- Career Intelligence -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-10">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
-                <div>
-                    <h2 class="text-2xl font-semibold text-gray-800">Career Intelligence</h2>
-                    <p class="text-sm text-gray-500 mt-1">AI insights from your latest uploaded resume.</p>
-                </div>
-                {% if career_analysis %}
-                <span class="text-sm px-3 py-1 rounded-full bg-gray-100 text-gray-700 self-start md:self-auto">
-                    {{ career_analysis.get_status_display }}
-                </span>
+        <div class="grid md:grid-cols-3 gap-4 mb-8">
+            <div class="jc-metric-card">
+                <p class="jc-metric-label">Applied Jobs</p>
+                {% if applied_jobs %}
+                <p class="jc-metric-value">{{ applied_jobs }}</p>
+                {% else %}
+                <p class="jc-text-small">No applications yet</p>
                 {% endif %}
             </div>
-
-            {% if career_analysis and career_analysis.status == 'completed' %}
-            <div class="grid md:grid-cols-3 gap-4 mb-6">
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Overall Score</p>
-                    <p class="text-3xl font-bold text-blue-600 mt-2">{{ career_analysis.overall_score }}</p>
-                </div>
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <p class="text-sm text-gray-500">ATS Score</p>
-                    <p class="text-3xl font-bold text-green-600 mt-2">{{ career_analysis.ats_score }}</p>
-                </div>
-                <div class="border border-gray-200 rounded-lg p-4">
-                    <p class="text-sm text-gray-500">Readiness Score</p>
-                    <p class="text-3xl font-bold text-purple-600 mt-2">{{ career_analysis.readiness_score }}</p>
-                </div>
+            <div class="jc-metric-card">
+                <p class="jc-metric-label">Saved Jobs</p>
+                {% if saved_jobs %}
+                <p class="jc-metric-value" style="color: var(--jc-success);">{{ saved_jobs }}</p>
+                {% else %}
+                <p class="jc-text-small">No saved jobs yet</p>
+                {% endif %}
             </div>
+            <div class="jc-metric-card">
+                <p class="jc-metric-label">Interviews Scheduled</p>
+                {% if interviews %}
+                <p class="jc-metric-value" style="color: var(--jc-secondary);">{{ interviews }}</p>
+                {% else %}
+                <p class="jc-text-small">No interviews scheduled</p>
+                {% endif %}
+            </div>
+        </div>
 
-            <div class="grid md:grid-cols-2 gap-6">
-                <div>
-                    <h3 class="font-semibold text-gray-800 mb-2">Strong Skills</h3>
-                    <div class="flex flex-wrap gap-2">
-                        {% for skill in career_analysis.analysis_data.strongest_skills|slice:":8" %}
-                        <span class="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full">{{ skill }}</span>
-                        {% empty %}
-                        <p class="text-sm text-gray-500">No strong skills identified yet.</p>
-                        {% endfor %}
+        <div class="grid xl:grid-cols-3 gap-6 mb-8">
+            <div class="xl:col-span-2 jc-ai-card">
+                <div class="jc-section-header">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="jc-ai-title">Career Intelligence</h2>
+                            <span class="jc-badge jc-badge-ai">Career Analysis</span>
+                        </div>
+                        <p class="jc-text-small">AI insights from your latest uploaded resume.</p>
+                        {% if career_analysis.analyzed_at %}
+                        <p class="jc-text-caption mt-1">Last Analysis: {{ career_analysis.analyzed_at|date:"j M Y" }} · {{ career_analysis.analyzed_at|time:"g:i A" }}</p>
+                        {% endif %}
+                    </div>
+                    {% if career_analysis %}
+                    <span class="jc-badge {% if career_analysis.status == 'completed' %}jc-badge-success{% elif career_analysis.status == 'failed' %}jc-badge-danger{% else %}jc-badge-warning{% endif %}">
+                        {{ career_analysis.get_status_display }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if career_analysis and career_analysis.status == 'completed' %}
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div class="jc-score-card">
+                        <p class="jc-metric-label">Overall Score</p>
+                        <p class="jc-metric-value">{{ career_analysis.overall_score }}<span class="jc-text-small">/100</span></p>
+                        <div class="jc-progress mt-2" role="progressbar" aria-label="Overall score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ career_analysis.overall_score }}">
+                            <span class="jc-progress-bar" style="width: {{ career_analysis.overall_score }}%;"></span>
+                        </div>
+                        <p class="jc-text-small mt-2">Overall suitability based on your resume.</p>
+                    </div>
+                    <div class="jc-score-card">
+                        <p class="jc-metric-label">ATS Score</p>
+                        <p class="jc-metric-value" style="color: var(--jc-success);">{{ career_analysis.ats_score }}<span class="jc-text-small">/100</span></p>
+                        <div class="jc-progress mt-2" role="progressbar" aria-label="ATS score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ career_analysis.ats_score }}">
+                            <span class="jc-progress-bar jc-progress-bar-success" style="width: {{ career_analysis.ats_score }}%;"></span>
+                        </div>
+                        <p class="jc-text-small mt-2">Expected compatibility with Applicant Tracking Systems.</p>
+                    </div>
+                    <div class="jc-score-card">
+                        <p class="jc-metric-label">Role Readiness</p>
+                        <p class="jc-metric-value" style="color: var(--jc-secondary);">{{ career_analysis.readiness_score }}<span class="jc-text-small">/100</span></p>
+                        <div class="jc-progress mt-2" role="progressbar" aria-label="Role readiness score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ career_analysis.readiness_score }}">
+                            <span class="jc-progress-bar jc-progress-bar-ai" style="width: {{ career_analysis.readiness_score }}%;"></span>
+                        </div>
+                        <p class="jc-text-small mt-2">Readiness for your recommended career path.</p>
                     </div>
                 </div>
 
-                <div>
-                    <h3 class="font-semibold text-gray-800 mb-2">Missing Skills</h3>
-                    <ul class="space-y-2 text-sm text-gray-600">
-                        {% for item in career_analysis.analysis_data.missing_skills|slice:":4" %}
-                        <li>{{ item.skill|default:item }}</li>
-                        {% empty %}
-                        <li>No major missing skills identified yet.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="jc-text-h4 mb-2">Strong Skills</h3>
+                        <div class="flex flex-wrap gap-2">
+                            {% for skill in career_analysis.analysis_data.strongest_skills|slice:":8" %}
+                            <span class="jc-skill-pill jc-skill-pill-match">{{ skill }}</span>
+                            {% empty %}
+                            <p class="jc-text-small">No strong skills identified yet.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
 
-                <div>
-                    <h3 class="font-semibold text-gray-800 mb-2">Improvement Suggestions</h3>
-                    <ul class="space-y-2 text-sm text-gray-600">
-                        {% for item in career_analysis.analysis_data.improvement_suggestions|slice:":4" %}
-                        <li>{{ item.title|default:item }}</li>
-                        {% empty %}
-                        <li>No improvement suggestions available yet.</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+                    <div>
+                        <h3 class="jc-text-h4 mb-2">Missing Skills</h3>
+                        <ul class="space-y-2 jc-text-small">
+                            {% for item in career_analysis.analysis_data.missing_skills|slice:":4" %}
+                            <li>{{ item.skill|default:item }}</li>
+                            {% empty %}
+                            <li>No major missing skills identified yet.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
 
-                <div>
-                    <h3 class="font-semibold text-gray-800 mb-2">Recommended Career Paths</h3>
-                    <ul class="space-y-2 text-sm text-gray-600">
-                        {% for item in career_analysis.analysis_data.career_paths|slice:":4" %}
-                        <li>{{ item.title|default:item }}</li>
-                        {% empty %}
-                        <li>No career paths available yet.</li>
-                        {% endfor %}
-                    </ul>
+                    <div>
+                        <h3 class="jc-text-h4 mb-2">Improvement Suggestions</h3>
+                        <ul class="space-y-2 jc-text-small">
+                            {% for item in career_analysis.analysis_data.improvement_suggestions|slice:":4" %}
+                            <li>{{ item.title|default:item }}</li>
+                            {% empty %}
+                            <li>No improvement suggestions available yet.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="jc-text-h4 mb-2">Recommended Career Paths</h3>
+                        <ul class="space-y-2 jc-text-small">
+                            {% for item in career_analysis.analysis_data.career_paths|slice:":4" %}
+                            <li>{{ item.title|default:item }}</li>
+                            {% empty %}
+                            <li>No career paths available yet.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% elif career_analysis and career_analysis.status == 'failed' %}
+                <div class="jc-alert jc-alert-danger">
+                    <p><strong>AI analysis could not be completed.</strong></p>
+                    <p class="mt-1">Please try again later.</p>
+                    <form id="careerRefreshForm" method="post" action="{% url 'refresh_career_analysis' %}" class="mt-3">
+                        {% csrf_token %}
+                        <button type="submit" class="jc-btn jc-btn-sm jc-btn-danger">Retry</button>
+                    </form>
+                </div>
+                {% elif career_analysis %}
+                <div class="jc-loading-state"><span class="jc-loader" aria-hidden="true"></span>Generating career insights...</div>
+                {% elif resume_analysis and resume_analysis.status == 'pending' %}
+                <div class="jc-loading-state"><span class="jc-loader" aria-hidden="true"></span>Analyzing your resume...</div>
+                {% elif resume_analysis and resume_analysis.status == 'failed' %}
+                <div class="jc-alert jc-alert-danger">
+                    <p><strong>AI analysis could not be completed.</strong></p>
+                    <p class="mt-1">Please try again later.</p>
+                    <a href="{% url 'seeker_profile' %}" class="jc-btn jc-btn-sm jc-btn-danger mt-3">Retry</a>
+                </div>
+                {% else %}
+                <div class="jc-empty-state">
+                    <p>Upload a resume to unlock AI-powered career insights.</p>
+                    <a href="{% url 'seeker_profile' %}" class="jc-btn jc-btn-sm jc-btn-primary mt-4">Upload Resume</a>
+                </div>
+                {% endif %}
+                <div id="careerLoadingStatus" class="jc-loading-state hidden mt-4" aria-live="polite">
+                    <span class="jc-loader" aria-hidden="true"></span>
+                    <span>Generating career insights...</span>
                 </div>
             </div>
-            {% elif career_analysis and career_analysis.status == 'failed' %}
-            <p class="text-sm text-red-600">Career analysis is unavailable right now. Upload a resume again or try refreshing later.</p>
-            {% elif career_analysis %}
-            <p class="text-sm text-gray-500">Career analysis is being prepared.</p>
-            {% else %}
-            <p class="text-sm text-gray-500">Upload a resume from your profile to unlock Career Intelligence.</p>
-            {% endif %}
+
+            <div class="jc-card">
+                <div class="jc-section-header">
+                    <div>
+                        <h2 class="jc-section-title">Quick Actions</h2>
+                        <p class="jc-text-small">Move through the seeker workflow.</p>
+                    </div>
+                </div>
+                <div class="grid gap-3">
+                    <a href="{% url 'all_jobs' %}" class="jc-btn jc-btn-primary">Browse Jobs</a>
+                    <a href="{% url 'my_applications' %}" class="jc-btn jc-btn-secondary">Applications</a>
+                    <a href="{% url 'saved_jobs' %}" class="jc-btn jc-btn-secondary">Saved Jobs</a>
+                    <a href="{% url 'seeker_profile' %}" class="jc-btn jc-btn-outline">Profile</a>
+                </div>
+            </div>
         </div>
 
-
-        <!-- AI Recommended Jobs -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-10">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+        <div class="jc-ai-card mb-8">
+            <div class="jc-section-header">
                 <div>
-                    <h2 class="text-2xl font-semibold text-gray-800">AI Recommended Jobs</h2>
-                    <p class="text-sm text-gray-500 mt-1">Semantic matches from your latest resume and career analysis.</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="jc-ai-title">AI Recommended Jobs</h2>
+                        <span class="jc-badge jc-badge-ai">Semantic Match</span>
+                    </div>
+                    <p class="jc-text-small">Semantic matches from your latest resume and career analysis.</p>
+                    {% if recommendation_run.completed_at %}
+                    <p class="jc-text-caption mt-1">Last Updated: {{ recommendation_run.completed_at|date:"j M Y" }} · {{ recommendation_run.completed_at|time:"g:i A" }}</p>
+                    {% endif %}
                 </div>
-                {% if recommendation_run %}
-                <span class="text-sm px-3 py-1 rounded-full bg-gray-100 text-gray-700 self-start md:self-auto">
-                    {{ recommendation_run.get_status_display }}
-                </span>
-                {% endif %}
+                <div class="jc-action-group">
+                    {% if recommendation_run %}
+                    <span class="jc-confidence-badge">{{ recommendation_run.get_status_display }}</span>
+                    {% endif %}
+                    <a href="{% url 'ai_recommendations' %}" class="jc-btn jc-btn-sm jc-btn-outline">View All AI Recommendations</a>
+                    <form id="recommendationRefreshForm" method="post" action="{% url 'refresh_job_recommendations' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="jc-btn jc-btn-sm jc-btn-primary">Refresh Recommendations</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="recommendationLoadingStatus" class="jc-loading-state hidden mb-4" aria-live="polite">
+                <span class="jc-loader" aria-hidden="true"></span>
+                <span>Finding semantic matches...</span>
             </div>
 
             {% if ai_recommendations %}
-            <div class="space-y-4">
+            <div class="grid gap-4">
                 {% for recommendation in ai_recommendations %}
-                <div class="border border-gray-200 rounded-lg p-4">
+                <div class="jc-card-compact">
                     <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                         <div>
-                            <h3 class="text-lg font-bold text-gray-800">{{ recommendation.job.title }}</h3>
-                            <p class="text-sm text-gray-500">
-                                {{ recommendation.job.company_name }} • {{ recommendation.job.location }}
-                            </p>
-                            <p class="text-sm text-gray-700 mt-2">{{ recommendation.explanation_data.summary }}</p>
-                            <div class="flex flex-wrap gap-2 mt-3">
+                            <h3 class="jc-text-h4">{{ recommendation.job.title }}</h3>
+                            <p class="jc-text-small">{{ recommendation.job.company_name }} • {{ recommendation.job.location }}</p>
+                            <span class="jc-badge jc-badge-ai mt-3">AI Generated</span>
+                            <details class="jc-disclosure mt-3">
+                                <summary>Why this recommendation? ▼</summary>
+                                <p class="jc-text-body mt-2">{{ recommendation.explanation_data.summary }}</p>
+                            </details>
+
+                            <p class="jc-text-caption mt-3">Matching skills</p>
+                            <div class="flex flex-wrap gap-2 mt-2">
                                 {% for skill in recommendation.explanation_data.matched_skills|slice:":4" %}
-                                <span class="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">{{ skill }}</span>
+                                <span class="jc-skill-pill jc-skill-pill-match">{{ skill }}</span>
+                                {% empty %}
+                                <span class="jc-text-small">No direct skill matches identified.</span>
                                 {% endfor %}
+                            </div>
+
+                            <p class="jc-text-caption mt-3">Missing skills</p>
+                            <div class="flex flex-wrap gap-2 mt-2">
                                 {% for skill in recommendation.explanation_data.missing_skills|slice:":3" %}
-                                <span class="text-xs bg-red-50 text-red-700 px-2 py-1 rounded-full">{{ skill }}</span>
+                                <span class="jc-skill-pill jc-skill-pill-gap">{{ skill }}</span>
+                                {% empty %}
+                                <span class="jc-text-small">No key skill gaps identified.</span>
                                 {% endfor %}
                             </div>
                         </div>
                         <div class="md:text-right shrink-0">
-                            <p class="text-2xl font-bold text-blue-600">{{ recommendation.final_score }}</p>
-                            <p class="text-xs uppercase text-gray-500">{{ recommendation.confidence }} confidence</p>
-                            <a href="{% url 'job_detail' recommendation.job.id %}"
-                                class="inline-block mt-3 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
-                                View
-                            </a>
+                            <p class="jc-metric-label">Match</p>
+                            {% if recommendation.final_score >= 80 %}
+                            <span class="jc-badge bg-green-100 text-green-700">Excellent Match · {{ recommendation.final_score }}%</span>
+                            {% elif recommendation.final_score >= 65 %}
+                            <span class="jc-badge bg-blue-100 text-blue-700">Strong Match · {{ recommendation.final_score }}%</span>
+                            {% elif recommendation.final_score >= 50 %}
+                            <span class="jc-badge bg-yellow-100 text-yellow-700">Good Match · {{ recommendation.final_score }}%</span>
+                            {% else %}
+                            <span class="jc-badge bg-orange-100 text-orange-700">Potential Match · {{ recommendation.final_score }}%</span>
+                            {% endif %}
+                            <div class="jc-progress mt-3" role="progressbar" aria-label="Job match percentage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ recommendation.final_score }}">
+                                <span class="jc-progress-bar" style="width: {{ recommendation.final_score }}%;"></span>
+                            </div>
+                            <p class="jc-text-caption">{{ recommendation.confidence|title }} confidence</p>
+                            <a href="{% url 'job_detail' recommendation.job.id %}" class="jc-btn jc-btn-sm jc-btn-primary mt-3">View</a>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
             {% elif recommendation_run and recommendation_run.status == 'failed' %}
-            <p class="text-sm text-red-600">AI job recommendations are unavailable right now. Try refreshing later.</p>
+            <div class="jc-alert jc-alert-danger">
+                <p><strong>AI recommendations could not be completed.</strong></p>
+                <p class="mt-1">Please try again later.</p>
+            </div>
+            {% elif recommendation_run and recommendation_run.status == 'pending' %}
+            <div class="jc-loading-state"><span class="jc-loader" aria-hidden="true"></span>Finding semantic matches...</div>
             {% else %}
-            <p class="text-sm text-gray-500">Refresh recommendations after your resume and embeddings are ready.</p>
+            <div class="jc-empty-state">
+                <p><strong>No strong AI recommendations found yet.</strong></p>
+                <p class="jc-text-small mt-2">Upload a stronger resume or check back after new jobs are posted.</p>
+            </div>
             {% endif %}
         </div>
 
-
-        <!-- Recommended Jobs -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Recently uploaded Jobs for You</h2>
-            <div class="space-y-4">
-                {% for job in recommended_jobs %}
-                <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h3 class="text-lg font-bold text-gray-800">{{ job.title }}</h3>
-                            <p class="text-gray-600">
-                                {{ job.location }} • {{ job.created_at|date:"M d, Y" }}
-                            </p>
-                        </div>
-                        <a href="{% url 'job_detail' job.id %}"
-                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
-                            View
-                        </a>
-                    </div>
+        <div class="jc-card">
+            <div class="jc-section-header">
+                <div>
+                    <h2 class="jc-section-title">Recently Uploaded Jobs</h2>
+                    <p class="jc-text-small">New roles available to review.</p>
                 </div>
-
+            </div>
+            <div class="grid gap-4">
+                {% for job in recommended_jobs %}
+                <div class="jc-card-compact flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h3 class="jc-text-h4">{{ job.title }}</h3>
+                        <p class="jc-text-small">{{ job.location }} • {{ job.created_at|date:"M d, Y" }}</p>
+                    </div>
+                    <a href="{% url 'job_detail' job.id %}" class="jc-btn jc-btn-sm jc-btn-primary">View</a>
+                </div>
                 {% empty %}
-                <p class="text-gray-500">No recommendations available right now.</p>
+                <div class="jc-empty-state">No recommendations available right now.</div>
                 {% endfor %}
             </div>
         </div>
     </div>
 </section>
+
+<script>
+    function bindAiRefresh(formId, loadingId, loadingText) {
+        const form = document.getElementById(formId);
+        const loading = document.getElementById(loadingId);
+        if (!form || !loading) return;
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const button = form.querySelector('button[type="submit"]');
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Working...';
+            loading.className = 'jc-loading-state mt-4';
+            loading.innerHTML = '<span class="jc-loader" aria-hidden="true"></span><span></span>';
+            loading.querySelector('span:last-child').textContent = loadingText;
+            form.setAttribute('aria-busy', 'true');
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                });
+                const result = await response.json();
+                if (!response.ok || result.status === 'failed') {
+                    throw new Error();
+                }
+                window.location.reload();
+            } catch (error) {
+                loading.className = 'jc-alert jc-alert-danger mt-4';
+                loading.innerHTML = '<strong>AI analysis could not be completed.</strong><br>Please try again later.';
+                button.disabled = false;
+                button.textContent = originalText;
+                form.removeAttribute('aria-busy');
+            }
+        });
+    }
+
+    bindAiRefresh('careerRefreshForm', 'careerLoadingStatus', 'Generating career insights...');
+    bindAiRefresh('recommendationRefreshForm', 'recommendationLoadingStatus', 'Finding semantic matches...');
+</script>
 {% endblock %}

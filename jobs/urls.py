@@ -1,7 +1,5 @@
 from django.urls import path
 from . import views
-from django.conf import settings
-from django.conf.urls.static import static
 from django.shortcuts import redirect
 
 def redirect_logout(request):
@@ -37,8 +35,6 @@ urlpatterns = [
     path('logout/', views.custom_logout, name='logout'),
     
     path('seeker/dashboard/', views.seeker_dashboard, name='seeker_dashboard'),
-    path('employer/dashboard/', views.employer_dashboard, name='employer_dashboard'),
-    
     path('redirect_dashboard/', views.dashboard_redirect, name='dashboard_redirect'),
     
     # Employer Section
@@ -54,6 +50,7 @@ urlpatterns = [
     #seeker logic urls
     path('job/<int:job_id>/', views.job_detail, name='job_detail'),
     path('job/<int:job_id>/apply/', views.apply_job, name='apply_job'),
+    path('job/<int:job_id>/cover-letter/generate/', views.generate_job_cover_letter, name='generate_job_cover_letter'),
     path('seeker/applied/', views.seeker_applied_jobs, name='seeker_applied'),
     
     path('employer/job/<int:job_id>/applicant/<int:app_id>/status/',views.update_application_status, name='update_application_status'),
@@ -64,20 +61,15 @@ urlpatterns = [
     
     path('job/<int:job_id>/save/', views.save_job, name='save_job'),
     path('job/<int:job_id>/unsave/', views.unsave_job, name='unsave_job'),
-    path('seeker/saved/', views.seeker_saved_jobs, name='seeker_saved_jobs'),
     
     path('jobs/search/', views.job_search, name='job_search'),
-    
     path('search/', views.job_search, name='job_search'),
-    path('job/<int:job_id>/', views.job_detail, name='job_detail'),
-
-   path('save-job/<int:job_id>/', views.save_job, name='save_job'),
-   path('unsave-job/<int:job_id>/', views.unsave_job, name='unsave_job'),
-   path('saved-jobs/', views.saved_jobs, name='saved_jobs'),
+    path('saved-jobs/', views.saved_jobs, name='saved_jobs'),
    
    
   path('jobs/all/', views.all_jobs, name="all_jobs"),
   path('seeker/applications/', views.my_applications, name='my_applications'),
+  path('seeker/ai-recommendations/', views.ai_recommendations, name='ai_recommendations'),
   path('seeker/jobs/recommendations/', views.job_recommendations_latest, name='job_recommendations_latest'),
   path('seeker/jobs/recommendations/refresh/', views.refresh_job_recommendations, name='refresh_job_recommendations'),
   path('seeker/jobs/recommendations/<int:recommendation_id>/', views.job_recommendation_detail, name='job_recommendation_detail'),
@@ -88,7 +80,4 @@ urlpatterns = [
   path('chat/upload/', views.chat_upload, name='chat_upload'),
   path('chat/<int:conversation_id>/', views.chat_room_view, name='chat_room'),
 
-
 ]
-
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
