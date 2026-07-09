@@ -404,6 +404,14 @@ class Interview(models.Model):
     message = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['application'],
+                name='unique_interview_per_application',
+            ),
+        ]
+
     def __str__(self):
        # return f"Interview for {self.application.user.username} on {self.scheduled_date}"
         return f"Interview for {self.application.applicant.user.username} on {self.scheduled_date}"

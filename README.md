@@ -2,12 +2,11 @@
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-5.x-092E20?logo=django&logoColor=white)
-![DRF](https://img.shields.io/badge/DRF-compatible-A30000)
 ![ChromaDB](https://img.shields.io/badge/ChromaDB-vector%20store-5B4EE5)
 ![Sentence Transformers](https://img.shields.io/badge/Sentence%20Transformers-all--MiniLM--L6--v2-F9AB00)
 ![Groq](https://img.shields.io/badge/Groq-LLM%20analysis-F55036)
 ![WebSockets](https://img.shields.io/badge/WebSockets-Django%20Channels-2C7BE5)
-![License](https://img.shields.io/badge/License-not%20specified-lightgrey)
+![License](https://img.shields.io/badge/License-pending-lightgrey)
 
 Job Connect AI is a Django-based job marketplace that connects candidates and employers with authentication, dashboards, job posting, applications, resume upload, real-time chat, and AI-powered career intelligence.
 
@@ -27,6 +26,7 @@ The platform has evolved from a traditional job board into an AI-assisted hiring
 - [Project Structure](#project-structure)
 - [API Overview](#api-overview)
 - [Screenshots](#screenshots)
+- [Demo Video](#demo-video)
 - [Repository Metadata Suggestions](#repository-metadata-suggestions)
 - [Future Roadmap](#future-roadmap)
 - [Contributing](#contributing)
@@ -41,7 +41,7 @@ The platform has evolved from a traditional job board into an AI-assisted hiring
 - WebSocket chat with persisted conversations and file attachments.
 - Media handling for resumes, profile images, and chat uploads.
 - Django admin support with Jazzmin styling.
-- Railway-ready deployment configuration.
+- Deployment-ready configuration for ASGI hosts with PostgreSQL, Redis, WhiteNoise, persistent media storage, and persistent ChromaDB storage.
 
 ## AI Features
 
@@ -51,18 +51,19 @@ The platform has evolved from a traditional job board into an AI-assisted hiring
 - Vector Store: stores vectors in ChromaDB while Django stores only embedding metadata.
 - Semantic Job Matching: recommends jobs using ChromaDB similarity plus deterministic reranking.
 - Explainable Recommendations: returns matched skills, missing skills, score breakdown, confidence, and next steps.
+- AI Cover Letters: generates editable cover letters grounded in the candidate resume, career analysis, selected job, company, and job description.
 
 ## Technology Stack
 
 | Area | Technologies |
 | --- | --- |
 | Backend | Python, Django, Django Channels, Daphne, ASGI |
-| API Style | Django session-authenticated views and JSON endpoints; DRF-compatible route documentation |
+| API Style | Django session-authenticated template views and JSON endpoints |
 | Database | SQLite for local development, `dj-database-url` for deployment database configuration |
 | AI | Groq, `pypdf`, Sentence Transformers, ChromaDB |
 | Frontend | Django templates, HTML, CSS, JavaScript |
 | Realtime | WebSockets through Django Channels |
-| Deployment | Railway, WhiteNoise, Gunicorn/Uvicorn/Daphne dependencies, Redis channel layer support |
+| Deployment | ASGI hosting with Daphne, WhiteNoise, PostgreSQL via `DATABASE_URL`, Redis channel layer support |
 
 ## System Architecture
 
@@ -105,6 +106,9 @@ flowchart TD
     ResumeAnalysis --> CandidateEmbedding[Candidate Embedding Text]
     CareerAnalysis --> CandidateEmbedding
     CandidateEmbedding --> CandidateVector[ChromaDB Candidate Vector]
+    CareerAnalysis --> CoverLetterPrompt[Grounded Cover Letter Prompt]
+    CoverLetterPrompt --> GroqCover[Groq Cover Letter JSON]
+    GroqCover --> Application[Editable Application Cover Letter]
 ```
 
 The AI pipeline is designed to preserve the existing upload flow. Missing AI configuration should fail analysis safely without blocking resume storage.
@@ -193,16 +197,20 @@ Create a `.env` file or configure these variables in your host platform.
 
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
-| `SECRET_KEY` | Production: yes | Development fallback in settings | Django signing key |
-| `DEBUG` | No | `True` | Enables development behavior |
+| `SECRET_KEY` | Production: yes | Local development fallback only when `DEBUG=True` | Django signing key |
+| `DEBUG` | Production: yes | `True` | Enables development behavior |
 | `DATABASE_URL` | No | SQLite database | Deployment database connection |
 | `REDIS_URL` | Production WebSockets | `redis://localhost:6379` | Redis channel layer when `DEBUG=False` |
 | `GROQ_API_KEY` | For AI analysis | Empty | Enables Groq resume and career analysis |
 | `GROQ_MODEL` | No | `llama-3.1-8b-instant` | Groq model name |
 | `EMBEDDING_MODEL` | No | `all-MiniLM-L6-v2` | Sentence Transformer model |
 | `CHROMA_DB_PATH` | No | `./chroma_db` | ChromaDB persistent storage path |
+| `SECURE_SSL_REDIRECT` | Production HTTPS | `False` | Redirect HTTP to HTTPS when the host/proxy is configured |
+| `SECURE_HSTS_SECONDS` | Production HTTPS | `0` | Enable HSTS only after confirming HTTPS-only deployment |
 
 If `GROQ_API_KEY` is missing, resume upload should still work. AI analysis records fail safely.
+
+Copy `.env.example` to `.env` for local development and set production values directly in the deployment platform.
 
 ## Local Development
 
@@ -295,6 +303,7 @@ python manage.py collectstatic --noinput
 ├── media/                        # Local uploads, ignored by Git
 ├── staticfiles/                  # Collected static files, ignored by Git
 ├── chroma_db/                    # Local vector store, ignored by Git
+├── .env.example                  # Example environment configuration
 ├── manage.py
 ├── requirements.txt
 └── README.md
@@ -312,7 +321,7 @@ Most routes are session-authenticated Django endpoints. JSON endpoints are prote
 | Career Analysis | `GET /seeker/profile/career-analysis/`, `POST /seeker/profile/career-analysis/refresh/` |
 | Recommendations | `GET /seeker/jobs/recommendations/`, `POST /seeker/jobs/recommendations/refresh/`, `GET /seeker/jobs/recommendations/<recommendation_id>/` |
 | Jobs | `GET /jobs/all/`, `GET /jobs/search/`, `GET /job/<job_id>/` |
-| Applications | `GET|POST /job/<job_id>/apply/`, `GET /seeker/applications/` |
+| Applications | `GET|POST /job/<job_id>/apply/`, `POST /job/<job_id>/cover-letter/generate/`, `GET /seeker/applications/` |
 | Employer Jobs | `GET /employer/jobs/`, `GET|POST /employer/job/post/`, `GET|POST /employer/job/<job_id>/edit/` |
 | Chat | `GET /chat/`, `GET /chat/start/<application_id>/`, `GET /chat/<conversation_id>/`, `POST /chat/upload/` |
 
@@ -320,39 +329,35 @@ See [docs/api.md](docs/api.md) for fuller endpoint notes and example payloads.
 
 ## Screenshots
 
-Screenshots should be added when the UI is finalized. Suggested image paths are included below so future updates can drop images into `docs/images/` without changing the section structure.
+The repository currently includes release screenshots in `Page Screenshot/`. For a polished GitHub release, these can later be normalized into `docs/images/` with consistent lowercase filenames.
 
 ### Landing Page
 
-```md
-![Landing Page](docs/images/landing-page.png)
+![Landing Page](Page%20Screenshot/landingpage.JPG)
+
+### Seeker Dashboard
+
+![Seeker Dashboard](Page%20Screenshot/jseeker%20dashboard.JPG)
+
+### Seeker Profile
+
+![Seeker Profile](Page%20Screenshot/jseeker%20profile.JPG)
+
+### Employer Dashboard
+
+![Employer Dashboard](Page%20Screenshot/e%20dashboard.JPG)
+
+### Job Application
+
+![Apply for Job](Page%20Screenshot/apply%20for%20job.JPG)
+
+## Demo Video
+
+Demo video placeholder:
+
+```text
+Add a short walkthrough video link here after deployment.
 ```
-
-Placeholder: add a screenshot of the public landing page.
-
-### Resume Upload
-
-```md
-![Resume Upload](docs/images/resume-upload.png)
-```
-
-Placeholder: add a screenshot of candidate resume upload and profile area.
-
-### Career Analysis
-
-```md
-![Career Analysis](docs/images/career-analysis.png)
-```
-
-Placeholder: add a screenshot of the Career Intelligence panel.
-
-### AI Recommended Jobs
-
-```md
-![AI Recommended Jobs](docs/images/ai-recommended-jobs.png)
-```
-
-Placeholder: add a screenshot of semantic job recommendations on the seeker dashboard.
 
 ## Repository Metadata Suggestions
 
@@ -365,7 +370,7 @@ AI-powered Django job marketplace with resume intelligence, career analysis, Chr
 Suggested GitHub topics:
 
 ```text
-django, python, job-board, ai, groq, chromadb, sentence-transformers, semantic-search, job-matching, websockets, django-channels, resume-parser, career-analysis, railway
+django, python, job-board, ai, groq, chromadb, sentence-transformers, semantic-search, job-matching, websockets, django-channels, resume-parser, career-analysis
 ```
 
 ## Future Roadmap
@@ -376,7 +381,6 @@ django, python, job-board, ai, groq, chromadb, sentence-transformers, semantic-s
 - Recommendation caching and refresh policies.
 - Skill synonym normalization.
 - Semantic job search.
-- AI cover letter generation.
 - Interview preparation assistant.
 - Employer-side AI candidate ranking.
 - Resume improvement assistant.
@@ -392,4 +396,4 @@ django, python, job-board, ai, groq, chromadb, sentence-transformers, semantic-s
 
 ## License
 
-No license file is currently included in this repository. Add a license before distributing or reusing this project outside the repository owner's intended scope.
+No license file is currently included in this repository. For a public GitHub release, add a `LICENSE` file before distribution. Recommended option: MIT License for a portfolio/open-source style release, unless the project owner wants stricter reuse terms.

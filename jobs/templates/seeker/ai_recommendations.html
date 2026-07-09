@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Recommendations | Job Connect{% endblock %}
+
+{% block content %}
+<section class="jc-page min-h-screen py-10">
+    <div class="jc-container">
+        <div class="jc-page-header">
+            <p class="jc-text-caption">AI Job Matching</p>
+            <div class="flex flex-wrap items-center gap-2">
+                <h1 class="jc-page-header-title">Your AI Recommendations</h1>
+                <span class="jc-badge jc-badge-ai">Semantic Match</span>
+            </div>
+            <p class="jc-page-header-subtitle">Jobs matched to your resume, skills, and career readiness.</p>
+            {% if recommendation_run.completed_at %}
+            <p class="jc-text-caption">Last Updated: {{ recommendation_run.completed_at|date:"j M Y" }} · {{ recommendation_run.completed_at|time:"g:i A" }}</p>
+            {% endif %}
+            <form id="recommendationRefreshForm" method="post" action="{% url 'refresh_job_recommendations' %}" class="mt-2">
+                {% csrf_token %}
+                <button type="submit" class="jc-btn jc-btn-sm jc-btn-primary">Refresh Recommendations</button>
+            </form>
+        </div>
+
+        <div id="recommendationLoadingStatus" class="jc-loading-state hidden mb-5" aria-live="polite">
+            <span class="jc-loader" aria-hidden="true"></span>
+            <span>Finding semantic matches...</span>
+        </div>
+
+        {% if recommendations %}
+        <div class="grid gap-4">
+            {% for recommendation in recommendations %}
+            <article class="jc-card">
+                <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <h2 class="jc-text-h3">{{ recommendation.job.title }}</h2>
+                            {% if recommendation.final_score >= 80 %}
+                            <span class="jc-badge bg-green-100 text-green-700">Excellent Match · {{ recommendation.final_score }}%</span>
+                            {% elif recommendation.final_score >= 65 %}
+                            <span class="jc-badge bg-blue-100 text-blue-700">Strong Match · {{ recommendation.final_score }}%</span>
+                            {% elif recommendation.final_score >= 50 %}
+                            <span class="jc-badge bg-yellow-100 text-yellow-700">Good Match · {{ recommendation.final_score }}%</span>
+                            {% else %}
+                            <span class="jc-badge bg-orange-100 text-orange-700">Potential Match · {{ recommendation.final_score }}%</span>
+                            {% endif %}
+                        </div>
+
+                        <p class="jc-text-small">{{ recommendation.job.company_name }} · {{ recommendation.job.location }}</p>
+                        <span class="jc-badge jc-badge-ai mt-3">AI Generated</span>
+                        <details class="jc-disclosure mt-3">
+                            <summary>Why this recommendation? ▼</summary>
+                            <p class="jc-text-body mt-2">{{ recommendation.explanation_data.summary }}</p>
+                        </details>
+
+                        <div class="grid md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                                <p class="jc-text-caption mb-2">Matched skills</p>
+                                <div class="flex flex-wrap gap-2">
+                                    {% for skill in recommendation.explanation_data.matched_skills %}
+                                    <span class="jc-skill-pill jc-skill-pill-match">{{ skill }}</span>
+                                    {% empty %}
+                                    <span class="jc-text-small">No direct skill matches identified.</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div>
+                                <p class="jc-text-caption mb-2">Missing skills</p>
+                                <div class="flex flex-wrap gap-2">
+                                    {% for skill in recommendation.explanation_data.missing_skills %}
+                                    <span class="jc-skill-pill jc-skill-pill-gap">{{ skill }}</span>
+                                    {% empty %}
+                                    <span class="jc-text-small">No key skill gaps identified.</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:text-right shrink-0">
+                        <p class="jc-metric-label">Confidence</p>
+                        <p class="jc-text-h4">{{ recommendation.confidence|title }}</p>
+                        <div class="jc-progress mt-3" role="progressbar" aria-label="Job match percentage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ recommendation.final_score }}">
+                            <span class="jc-progress-bar" style="width: {{ recommendation.final_score }}%;"></span>
+                        </div>
+                        <a href="{% url 'job_detail' recommendation.job.id %}" class="jc-btn jc-btn-primary mt-4">View Job</a>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
+        {% if recommendations.paginator.num_pages > 1 %}
+        <nav class="flex items-center justify-center gap-3 mt-8" aria-label="Recommendation pages">
+            {% if recommendations.has_previous %}
+            <a href="?page={{ recommendations.previous_page_number }}" class="jc-btn jc-btn-sm jc-btn-secondary">Previous</a>
+            {% endif %}
+            <span class="jc-text-small">Page {{ recommendations.number }} of {{ recommendations.paginator.num_pages }}</span>
+            {% if recommendations.has_next %}
+            <a href="?page={{ recommendations.next_page_number }}" class="jc-btn jc-btn-sm jc-btn-secondary">Next</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+        {% elif recommendation_run and recommendation_run.status == 'failed' %}
+        <div class="jc-alert jc-alert-danger">
+            <p><strong>AI recommendations could not be completed.</strong></p>
+            <p class="mt-1">Please try again later.</p>
+        </div>
+        {% elif recommendation_run and recommendation_run.status == 'pending' %}
+        <div class="jc-loading-state"><span class="jc-loader" aria-hidden="true"></span>Finding semantic matches...</div>
+        {% else %}
+        <div class="jc-empty-state">
+            <h2 class="jc-text-h3 mb-2">No strong AI recommendations found yet.</h2>
+            <p>Upload a stronger resume or check back after new jobs are posted.</p>
+            <a href="{% url 'seeker_dashboard' %}" class="jc-btn jc-btn-primary mt-5">Back to Dashboard</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+    const recommendationRefreshForm = document.getElementById('recommendationRefreshForm');
+    const recommendationLoadingStatus = document.getElementById('recommendationLoadingStatus');
+
+    recommendationRefreshForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const button = recommendationRefreshForm.querySelector('button[type="submit"]');
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Working...';
+        recommendationLoadingStatus.className = 'jc-loading-state mb-5';
+        recommendationLoadingStatus.innerHTML = '<span class="jc-loader" aria-hidden="true"></span><span>Finding semantic matches...</span>';
+        recommendationRefreshForm.setAttribute('aria-busy', 'true');
+
+        try {
+            const response = await fetch(recommendationRefreshForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': recommendationRefreshForm.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            });
+            const result = await response.json();
+            if (!response.ok || result.status === 'failed') {
+                throw new Error();
+            }
+            window.location.reload();
+        } catch (error) {
+            recommendationLoadingStatus.className = 'jc-alert jc-alert-danger mb-5';
+            recommendationLoadingStatus.innerHTML = '<strong>AI recommendations could not be completed.</strong><br>Please try again later.';
+            button.disabled = false;
+            button.textContent = originalText;
+            recommendationRefreshForm.removeAttribute('aria-busy');
+        }
+    });
+</script>
+{% endblock %}

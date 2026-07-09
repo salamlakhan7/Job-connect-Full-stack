@@ -1,85 +1,88 @@
 {% extends 'employer_base.html' %}
+
+{% block title %}Applicants | Job Connect{% endblock %}
+{% block breadcrumbs %}<a href="{% url 'employer_jobs' %}" style="color: var(--jc-primary);">My Jobs</a><span>/</span><span>Applicants</span>{% endblock %}
+
 {% block content %}
+<div class="jc-page-header">
+    <p class="jc-text-caption">Candidate Pipeline</p>
+    <h1 class="jc-page-header-title">Applicants for {{ job.title }}</h1>
+    <p class="jc-page-header-subtitle">{{ job.company_name }} &middot; {{ job.location }} &middot; {{ applicants|length }} applicant{{ applicants|length|pluralize }}</p>
+</div>
 
-<section class="p-6">
-    <h1 class="text-2xl font-bold mb-6">Applicants for: {{ job.title }}</h1>
+<div class="grid gap-5">
+    {% for app in applicants %}
+    <article class="jc-card jc-card-hover">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+            <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="jc-text-h3">{{ app.applicant.user.get_full_name|default:app.applicant.user.username }}</h2>
+                    <span class="jc-badge {% if app.status == 'rejected' %}jc-badge-danger{% elif app.status == 'hired' or app.status == 'shortlisted' %}jc-badge-success{% elif app.status == 'interview' %}jc-badge-ai{% else %}jc-badge-warning{% endif %}">
+                        {{ app.get_status_display }}
+                    </span>
+                </div>
+                <p class="jc-text-small mt-1">{{ app.applicant.user.email }} &middot; Applied {{ app.applied_at|date:"M d, Y" }}</p>
 
-    {% if applicants %}
-    <div class="space-y-4">
-        {% for app in applicants %}
-        <div class="p-4 border rounded bg-white shadow-sm">
-
-            <!-- Applicant Name -->
-            <h2 class="text-lg font-semibold">
-                {{ app.applicant.user.username }}
-            </h2>
-
-            <!-- Cover letter -->
-            <p class="mt-1 text-gray-700">
-                {{ app.cover_letter|default:"No cover letter provided" }}
-            </p>
-
-            <!-- Resume -->
-            <a href="{{ app.resume.url }}" class="text-blue-600 underline block mt-2">
-                Download Resume
-            </a>
-
-            <!-- Status -->
-            <p class="mt-2 text-sm">
-                <strong>Status:</strong>
-                <span class="px-3 py-1 bg-gray-200 rounded">
-                    {{ app.get_status_display }}
-                </span>
-            </p>
-
-            <!-- ACTIONS -->
-            <div class="mt-4 flex flex-wrap gap-2">
-
-                <!-- Accept -->
-                <form method="POST" action="{% url 'update_application_status' job.id app.id %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="status" value="shortlisted">
-                    <button class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
-                        Shortlist
-                    </button>
-                </form>
-
-                <!-- Reject -->
-                <form method="POST" action="{% url 'update_application_status' job.id app.id %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="status" value="rejected">
-                    <button class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
-                        Reject
-                    </button>
-                </form>
-
-                <!-- Hire -->
-                <form method="POST" action="{% url 'update_application_status' job.id app.id %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="status" value="hired">
-                    <button class="bg-blue-700 text-white px-3 py-1 rounded hover:bg-blue-800">
-                        Hire
-                    </button>
-                </form>
-
-                <!-- Schedule Interview -->
-                <a href="{% url 'schedule_interview' app.id %}"
-                    class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">
-                    Schedule Interview
-                </a>
-
-                <!-- Chat Button -->
-                <a href="{% url 'chat_start' app.id %}" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Chat with Applicant</a>
-
+                <div class="grid md:grid-cols-3 gap-4 mt-5">
+                    <section class="jc-subpanel">
+                        <h3 class="jc-text-h4 mb-2 flex items-center gap-2"><i data-lucide="file-user" class="jc-icon"></i>Resume</h3>
+                        {% if app.resume %}
+                        <a href="{{ app.resume.url }}" target="_blank" rel="noopener" class="jc-btn jc-btn-sm jc-btn-secondary gap-2"><i data-lucide="external-link" class="jc-icon"></i>View Resume</a>
+                        {% else %}
+                        <p class="jc-text-small">No resume attached.</p>
+                        {% endif %}
+                    </section>
+                    <section class="jc-subpanel">
+                        <h3 class="jc-text-h4 mb-2 flex items-center gap-2"><i data-lucide="file-text" class="jc-icon"></i>Cover Letter</h3>
+                        {% if app.cover_letter %}
+                        <details class="jc-disclosure">
+                            <summary>Read cover letter</summary>
+                            <div class="jc-cover-letter jc-text-body mt-3">{{ app.cover_letter|linebreaksbr }}</div>
+                        </details>
+                        {% else %}
+                        <p class="jc-text-small">No cover letter provided.</p>
+                        {% endif %}
+                    </section>
+                    <section class="jc-subpanel">
+                        <h3 class="jc-text-h4 mb-2 flex items-center gap-2"><i data-lucide="calendar-clock" class="jc-icon"></i>Interview</h3>
+                        {% if app.has_interview %}
+                        <span class="jc-badge jc-badge-ai">Scheduled</span>
+                        {% else %}
+                        <p class="jc-text-small">Not scheduled yet.</p>
+                        {% endif %}
+                    </section>
+                </div>
             </div>
 
+            <div class="jc-action-group lg:flex-col lg:w-44 shrink-0">
+                <form method="post" action="{% url 'update_application_status' job.id app.id %}">
+                    {% csrf_token %}<input type="hidden" name="status" value="shortlisted">
+                    <button type="submit" class="jc-btn jc-btn-sm jc-btn-success w-full gap-2"><i data-lucide="user-check" class="jc-icon"></i>Shortlist</button>
+                </form>
+                <form method="post" action="{% url 'update_application_status' job.id app.id %}">
+                    {% csrf_token %}<input type="hidden" name="status" value="rejected">
+                    <button type="submit" class="jc-btn jc-btn-sm jc-btn-danger w-full gap-2"><i data-lucide="user-x" class="jc-icon"></i>Reject</button>
+                </form>
+                <form method="post" action="{% url 'update_application_status' job.id app.id %}">
+                    {% csrf_token %}<input type="hidden" name="status" value="hired">
+                    <button type="submit" class="jc-btn jc-btn-sm jc-btn-primary w-full gap-2"><i data-lucide="badge-check" class="jc-icon"></i>Hire</button>
+                </form>
+                {% if app.has_interview %}
+                <span class="jc-badge jc-badge-ai justify-center">Interview Scheduled</span>
+                {% else %}
+                <a href="{% url 'schedule_interview' app.id %}" class="jc-btn jc-btn-sm jc-btn-secondary gap-2"><i data-lucide="calendar-plus" class="jc-icon"></i>Schedule Interview</a>
+                {% endif %}
+                {% if app.status == 'shortlisted' or app.status == 'interview' or app.status == 'hired' %}
+                <a href="{% url 'chat_start' app.id %}" class="jc-btn jc-btn-sm jc-btn-outline gap-2"><i data-lucide="message-circle" class="jc-icon"></i>Chat</a>
+                {% endif %}
+            </div>
         </div>
-        {% endfor %}
+    </article>
+    {% empty %}
+    <div class="jc-empty-state">
+        <h2 class="jc-text-h3 mb-2">No applicants yet</h2>
+        <p>Applications will appear here when candidates apply.</p>
     </div>
-    {% else %}
-    <p class="text-gray-500">No applicants yet.</p>
-    {% endif %}
-
-</section>
-
+    {% endfor %}
+</div>
 {% endblock %}

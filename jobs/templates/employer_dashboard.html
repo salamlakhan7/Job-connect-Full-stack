@@ -1,56 +1,85 @@
 {% extends 'employer_base.html' %}
-{% load static %}
+
+{% block title %}Employer Dashboard | Job Connect{% endblock %}
 
 {% block content %}
-<section class="min-h-screen bg-gray-50 py-12">
-  <div class="max-w-6xl mx-auto px-4">
-    <h1 class="text-3xl font-bold text-blue-700 mb-8">Welcome Back, {{ user.first_name|default:user.username }} </h1>
+<div class="jc-page-header">
+    <p class="jc-text-caption">Employer Dashboard</p>
+    <h1 class="jc-page-header-title">Welcome back, {{ user.first_name|default:user.username }} <span aria-hidden="true"> </span></h1>
+    <p class="jc-page-header-subtitle">Monitor your hiring pipeline, review applications, and manage interviews from one place.</p>
+</div>
 
-    <!-- Stats Cards -->
-    <div class="grid md:grid-cols-3 gap-6 mb-10">
-      <div class="bg-white shadow-lg rounded-xl p-6 border-t-4 border-blue-600">
-        <h3 class="text-lg font-semibold text-gray-700">Active Job Posts</h3>
-        <p class="text-3xl font-bold text-blue-600 mt-3">{{ active_jobs_count|default:0 }}</p>
-      </div>
-      <div class="bg-white shadow-lg rounded-xl p-6 border-t-4 border-green-600">
-        <h3 class="text-lg font-semibold text-gray-700">Total Applications</h3>
-        <p class="text-3xl font-bold text-green-600 mt-3">{{ applications_count|default:0 }}</p>
-      </div>
-      <div class="bg-white shadow-lg rounded-xl p-6 border-t-4 border-yellow-500">
-        <h3 class="text-lg font-semibold text-gray-700">Pending Reviews</h3>
-        <p class="text-3xl font-bold text-yellow-500 mt-3">{{ pending_reviews|default:0 }}</p>
-      </div>
+<section class="grid sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-8" aria-label="Hiring metrics">
+    <div class="jc-metric-card jc-kpi-card">
+        <span class="jc-kpi-icon"><i data-lucide="briefcase" class="jc-icon"></i></span>
+        <p class="jc-metric-label">Active Jobs</p>
+        <p class="jc-metric-value">{{ active_jobs_count }}</p>
+        <p class="jc-metric-helper">Currently published</p>
     </div>
+    <div class="jc-metric-card jc-kpi-card">
+        <span class="jc-kpi-icon"><i data-lucide="files" class="jc-icon"></i></span>
+        <p class="jc-metric-label">Total Applications</p>
+        <p class="jc-metric-value">{{ applications_count }}</p>
+        <p class="jc-metric-helper">Across all job posts</p>
+    </div>
+    <div class="jc-metric-card jc-kpi-card jc-kpi-card-ai">
+        <span class="jc-kpi-icon jc-kpi-icon-ai"><i data-lucide="calendar-days" class="jc-icon"></i></span>
+        <p class="jc-metric-label">Interviews Scheduled</p>
+        <p class="jc-metric-value" style="color: var(--jc-secondary);">{{ interviews_count }}</p>
+        <p class="jc-metric-helper">Scheduled with candidates</p>
+    </div>
+    <div class="jc-metric-card jc-kpi-card jc-kpi-card-warning">
+        <span class="jc-kpi-icon jc-kpi-icon-warning"><i data-lucide="user-check" class="jc-icon"></i></span>
+        <p class="jc-metric-label">Shortlisted Candidates</p>
+        <p class="jc-metric-value" style="color: var(--jc-warning);">{{ shortlisted_count }}</p>
+        <p class="jc-metric-helper">Ready for next step</p>
+    </div>
+    <div class="jc-metric-card jc-kpi-card jc-kpi-card-success">
+        <span class="jc-kpi-icon jc-kpi-icon-success"><i data-lucide="badge-check" class="jc-icon"></i></span>
+        <p class="jc-metric-label">Hired Candidates</p>
+        <p class="jc-metric-value" style="color: var(--jc-success);">{{ hired_count }}</p>
+        <p class="jc-metric-helper">Successfully hired</p>
+    </div>
+</section>
 
-    <!-- Job Listings -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-semibold text-gray-800">Your Job Posts</h2>
-        <a href="{% url 'post_job' %}" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition">
-          + Post New Job
-        </a>
-      </div>
-
-      <div class="space-y-4">
-        {% for job in jobs %}
-        <div class="p-4 border border-gray-200 rounded-lg hover:shadow-md transition">
-          <div class="flex justify-between items-center">
-            <div>
-              <h3 class="text-lg font-bold text-gray-800">{{ job.title }}</h3>
-              <p class="text-gray-600">{{ job.location }} • {{ job.created_at|date:"M d, Y" }}</p>
-            </div>
-            <div class="flex space-x-3">
-              <a href="{% url 'view_applicants' job.id %}" class="text-green-600 hover:underline">View Applicants</a>
-              {% comment %} <a href="{% url 'edit_job' job.id %}" class="text-blue-600 hover:underline">Edit</a> {% endcomment %}
-              <a href="{% url 'delete_job' job.id %}" class="text-red-600 hover:underline">Delete</a>
-            </div>
-          </div>
+<section>
+    <div class="jc-section-header">
+        <div>
+            <h2 class="jc-section-title">Your Job Posts</h2>
+            <p class="jc-text-small">Review current postings and their applicants.</p>
         </div>
-        {% empty %}
-        <p class="text-gray-500">No job posts yet. Click “Post New Job” to get started.</p>
-        {% endfor %}
-      </div>
+        <div class="jc-action-group">
+            <a href="{% url 'employer_jobs' %}" class="jc-btn jc-btn-secondary gap-2"><i data-lucide="list" class="jc-icon"></i>View All Jobs</a>
+            <a href="{% url 'post_job' %}" class="jc-btn jc-btn-primary gap-2"><i data-lucide="circle-plus" class="jc-icon"></i>Post New Job</a>
+        </div>
     </div>
-  </div>
+
+    <div class="grid gap-4">
+        {% for job in jobs %}
+        <article class="jc-card-compact jc-card-hover {% if job.application_set.count %}jc-card-attention{% endif %} flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="jc-text-h4">{{ job.title }}</h3>
+                    <span class="jc-badge jc-badge-success">Published</span>
+                </div>
+                <div class="jc-meta-row jc-job-meta jc-text-small mt-2">
+                    <span><i data-lucide="building-2" class="jc-icon"></i>{{ job.company_name }}</span>
+                    <span><i data-lucide="map-pin" class="jc-icon"></i>{{ job.location }}</span>
+                    <span><i data-lucide="calendar" class="jc-icon"></i>{{ job.created_at|date:"M d, Y" }}</span>
+                    <span><i data-lucide="users" class="jc-icon"></i>{{ job.application_set.count }} application{{ job.application_set.count|pluralize }}</span>
+                </div>
+            </div>
+            <div class="jc-action-group jc-job-actions">
+                <a href="{% url 'view_applicants' job.id %}" class="jc-btn jc-btn-sm jc-btn-primary gap-2"><i data-lucide="users" class="jc-icon"></i>View Applicants</a>
+            </div>
+        </article>
+        {% empty %}
+        <div class="jc-empty-state">
+            <h3 class="jc-text-h3 mb-2">No job posts yet</h3>
+            <p>Create your first posting to begin receiving applications.</p>
+            <a href="{% url 'post_job' %}" class="jc-btn jc-btn-primary mt-5">Post a Job</a>
+        </div>
+        {% endfor %}
+    </div>
 </section>
 {% endblock %}

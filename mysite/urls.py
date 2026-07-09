@@ -15,8 +15,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -29,11 +27,9 @@ def redirect_logout(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('jobs.urls')),  # Home page → jobs app
-    # ✅ Built-in Django login/logout/register
     path('accounts/', include('django.contrib.auth.urls')),
-    path('accounts/logout/', redirect_logout),               # redirect built-in logout
-    path('', include('jobs.urls')),                          # your app routes
+    path('accounts/logout/', redirect_logout),
+    path('', include('jobs.urls')),
 ]
 
 if settings.DEBUG:

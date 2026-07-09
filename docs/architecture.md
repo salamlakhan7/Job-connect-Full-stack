@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the current Job Connect AI architecture after the Resume Intelligence, Career Analysis, Embedding Infrastructure, and Semantic Job Matching phases.
+This document describes the current Job Connect AI architecture after the Resume Intelligence, Career Analysis, Embedding Infrastructure, Semantic Job Matching, and AI Cover Letter phases.
 
 ## Table of Contents
 
@@ -12,6 +12,7 @@ This document describes the current Job Connect AI architecture after the Resume
 - [Career Analysis Flow](#career-analysis-flow)
 - [Embedding Infrastructure](#embedding-infrastructure)
 - [Semantic Job Matching Flow](#semantic-job-matching-flow)
+- [Cover Letter Generation Flow](#cover-letter-generation-flow)
 - [Failure Handling](#failure-handling)
 - [Security Boundaries](#security-boundaries)
 
@@ -104,7 +105,8 @@ jobs/services/
 ├── job_embedding.py               # Job embedding text and lifecycle
 ├── vector_store.py                # ChromaDB wrapper
 ├── job_matching.py                # Semantic matching and reranking
-└── recommendation_explanations.py # Deterministic explanation data
+├── recommendation_explanations.py # Deterministic explanation data
+└── cover_letter.py                # Grounded cover letter generation
 ```
 
 Key boundaries:
@@ -241,6 +243,31 @@ Recommendation explanations include:
 
 The LLM is not used to determine ranking.
 
+## Cover Letter Generation Flow
+
+```mermaid
+flowchart TD
+    Candidate[Logged-in Seeker] --> Job[Selected Job]
+    Candidate --> ResumeAnalysis[Completed ResumeAnalysis]
+    ResumeAnalysis --> CareerAnalysis[Completed CareerAnalysis]
+    Job --> Prompt[Grounded Cover Letter Prompt]
+    ResumeAnalysis --> Prompt
+    CareerAnalysis --> Prompt
+    Prompt --> Groq[Groq JSON Response]
+    Groq --> EditableDraft[Editable Cover Letter Draft]
+    EditableDraft --> Application[Application.cover_letter]
+```
+
+Cover letter generation is grounded in:
+
+- Candidate resume analysis.
+- Candidate career analysis.
+- Selected job title.
+- Company name.
+- Job description.
+
+The generated text is returned to the application form as an editable draft. Submitting the application persists the final edited text in `Application.cover_letter`.
+
 ## Failure Handling
 
 The system is designed so AI failures do not block core marketplace behavior:
@@ -248,6 +275,7 @@ The system is designed so AI failures do not block core marketplace behavior:
 - Resume upload succeeds even if Groq is unavailable.
 - Job posting succeeds even if embedding generation fails.
 - Recommendation refresh creates a failed run with a safe error message if ChromaDB or embeddings are unavailable.
+- Cover letter generation returns a safe JSON error when resume analysis, career analysis, or Groq output is unavailable.
 - Dashboard pages continue to render when AI records are missing or failed.
 
 ## Security Boundaries
@@ -255,5 +283,6 @@ The system is designed so AI failures do not block core marketplace behavior:
 - Seeker-only endpoints check the logged-in user's `UserProfile`.
 - Recommendation detail endpoints filter by `user_profile`.
 - Employer job management filters by the logged-in employer where ownership matters.
+- Chat access is centrally gated by application status for HTTP views, uploads, and WebSocket connect/receive.
 - Raw resume text and embeddings are not returned by recommendation endpoints.
 - ChromaDB stores vectors locally and is ignored by Git.

@@ -57,8 +57,10 @@ def next_steps_for_missing_skills(missing_skills: list[str]) -> list[str]:
 def build_explanation_data(job, matched_skills, missing_skills, score_breakdown, confidence):
     if matched_skills:
         summary = f"This role matches your profile through {', '.join(matched_skills[:3])}."
+    elif score_breakdown.get('semantic_score', 0) >= 50:
+        summary = "This role is semantically aligned with your resume, although explicit skill overlap is limited."
     else:
-        summary = "This role is semantically related to your profile, but explicit skill overlap is limited."
+        summary = "This is a lower-confidence match because direct skill and semantic overlap are limited."
 
     return {
         'matched_skills': matched_skills,

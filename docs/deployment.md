@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide covers local and Railway deployment considerations for Job Connect AI.
+This guide covers local and production deployment considerations for Job Connect AI.
 
 ## Table of Contents
 
@@ -8,7 +8,7 @@ This guide covers local and Railway deployment considerations for Job Connect AI
 - [Dependencies](#dependencies)
 - [Running Locally](#running-locally)
 - [Static and Media Files](#static-and-media-files)
-- [Railway Deployment](#railway-deployment)
+- [Production Deployment](#production-deployment)
 - [ChromaDB Notes](#chromadb-notes)
 - [Sentence Transformer Notes](#sentence-transformer-notes)
 - [Groq Notes](#groq-notes)
@@ -21,14 +21,16 @@ Configure these variables in your local shell, `.env` loader, or deployment plat
 
 | Variable | Required | Example | Notes |
 | --- | --- | --- | --- |
-| `SECRET_KEY` | Production: yes | `change-me` | Use a long random value in production. |
+| `SECRET_KEY` | Production: yes | `change-me` | Use a long random value in production. Required when `DEBUG=False`. |
 | `DEBUG` | Production: yes | `False` | Use `False` for deployed environments. |
 | `DATABASE_URL` | Recommended | `postgresql://...` | Falls back to local SQLite if unset. |
-| `REDIS_URL` | Production WebSockets | `redis://...` | Used by Channels when `DEBUG=False`. |
+| `REDIS_URL` | Production WebSockets | `redis://...` | Used by Channels when configured. Required for reliable multi-process WebSockets. |
 | `GROQ_API_KEY` | For AI analysis | `gsk_...` | If missing, uploads should still work but AI analysis fails safely. |
 | `GROQ_MODEL` | No | `llama-3.1-8b-instant` | Defaults in settings. |
 | `EMBEDDING_MODEL` | No | `all-MiniLM-L6-v2` | Sentence Transformer model name. |
 | `CHROMA_DB_PATH` | No | `/app/chroma_db` | Persistent vector store path. |
+| `SECURE_SSL_REDIRECT` | Production HTTPS | `True` | Enable when HTTPS is terminated correctly by the host/proxy. |
+| `SECURE_HSTS_SECONDS` | Production HTTPS | `31536000` | Enable only after confirming the site is HTTPS-only. |
 
 ## Dependencies
 
@@ -109,22 +111,22 @@ MEDIA_ROOT=./media
 
 For production, use persistent disk storage or an external object store if uploaded resumes and chat files must survive redeploys.
 
-## Railway Deployment
+## Production Deployment
 
-The repository includes Railway-oriented dependencies and settings.
+The repository includes deployment-oriented dependencies and settings, but the target host should be chosen explicitly.
 
-Recommended Railway setup:
+Recommended setup:
 
-1. Create a Railway project from the GitHub repository.
-2. Add a database service if production data should not use SQLite.
-3. Set `DATABASE_URL` from the Railway database.
-4. Add Redis if WebSocket chat should use a production channel layer.
+1. Create a web service from the GitHub repository on Render, Fly.io, Koyeb, a VPS, or another ASGI-capable host.
+2. Add PostgreSQL if production data should not use SQLite.
+3. Set `DATABASE_URL` from the production database.
+4. Add Redis if WebSocket chat should work reliably across processes or instances.
 5. Set `REDIS_URL`.
 6. Set `SECRET_KEY`.
 7. Set `DEBUG=False`.
 8. Set `GROQ_API_KEY` if AI analysis should run.
 9. Set `CHROMA_DB_PATH` to a persistent mounted path if available.
-10. Run migrations during deploy or through a Railway shell:
+10. Run migrations during deploy or through a deployment shell:
 
 ```bash
 python manage.py migrate
@@ -136,14 +138,14 @@ python manage.py migrate
 python manage.py collectstatic --noinput
 ```
 
-The existing `Procfile` should be reviewed against the desired process type. Use an ASGI-capable server when WebSockets are required.
+The `Procfile` starts the ASGI server only. Run migrations and static collection as separate release/build commands on the deployment platform.
 
 ### Suggested Deployment Flow
 
 ```mermaid
 flowchart TD
-    GitHub[GitHub Repository] --> Railway[Railway Project]
-    Railway --> Install[Install requirements.txt]
+    GitHub[GitHub Repository] --> Host[Deployment Host]
+    Host --> Install[Install requirements.txt]
     Install --> Env[Load Environment Variables]
     Env --> Migrate[Run Django Migrations]
     Migrate --> Static[Collect Static Files]
@@ -219,6 +221,7 @@ Current AI-related models include:
 - `DEBUG=False`
 - Strong `SECRET_KEY`
 - Correct `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`
+- HTTPS settings configured for the deployment host
 - Persistent database configured with `DATABASE_URL`
 - Persistent media storage configured
 - Redis configured for Channels

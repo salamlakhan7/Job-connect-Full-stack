@@ -9,7 +9,7 @@ def seeker_required(view_func):
         if hasattr(user, 'userprofile') and user.userprofile.role == 'seeker':
             return view_func(request, *args, **kwargs)
         messages.error(request, "Access denied. Job seekers only.")
-        return redirect('landing')
+        return redirect('home')
     return wrapper
 
 
@@ -20,7 +20,7 @@ def employer_required(view_func):
         if hasattr(user, 'userprofile') and user.userprofile.role == 'employer':
             return view_func(request, *args, **kwargs)
         messages.error(request, "Access denied. Employers only.")
-        return redirect('landing')
+        return redirect('home')
     return wrapper
 
 

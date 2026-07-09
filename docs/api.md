@@ -12,6 +12,7 @@ Job Connect AI primarily uses Django template views with session authentication.
 - [Jobs](#jobs)
 - [Applications](#applications)
 - [Saved Jobs](#saved-jobs)
+- [Cover Letter Generation](#cover-letter-generation)
 - [Chat](#chat)
 - [Error and Access Patterns](#error-and-access-patterns)
 
@@ -323,7 +324,7 @@ Returns one recommendation if it belongs to the logged-in seeker.
 | `/job/<job_id>/` | `GET` | Public | View job detail |
 | `/jobs/search/` | `GET` | Public | Search jobs |
 | `/search/` | `GET` | Public | Search jobs |
-| `/jobs/all/` | `GET` | Public or authenticated | List jobs |
+| `/jobs/all/` | `GET` | Seeker | List jobs |
 | `/employer/jobs/` | `GET` | Employer | List employer jobs |
 | `/employer/job/post/` | `GET`, `POST` | Employer | Create a job |
 | `/employer/job/<job_id>/edit/` | `GET`, `POST` | Owning employer | Edit a job |
@@ -399,6 +400,7 @@ Requires the owning employer.
 | Endpoint | Methods | Access | Purpose |
 | --- | --- | --- | --- |
 | `/job/<job_id>/apply/` | `GET`, `POST` | Seeker | Apply to a job |
+| `/job/<job_id>/cover-letter/generate/` | `POST` | Seeker | Generate an editable AI cover letter draft |
 | `/seeker/applications/` | `GET` | Seeker | View candidate applications |
 | `/seeker/applied/` | `GET` | Seeker | View applied jobs |
 | `/employer/job/<job_id>/applicants/` | `GET` | Owning employer | View job applicants |
@@ -463,23 +465,53 @@ POST /application/<app_id>/interview/
 
 | Endpoint | Method | Access | Purpose |
 | --- | --- | --- | --- |
-| `/job/<job_id>/save/` | `GET` | Seeker | Save a job |
-| `/job/<job_id>/unsave/` | `GET` | Seeker | Remove saved job |
-| `/seeker/saved/` | `GET` | Seeker | View saved jobs |
+| `/job/<job_id>/save/` | `POST` | Seeker | Save a job |
+| `/job/<job_id>/unsave/` | `POST` | Seeker | Remove saved job |
 | `/saved-jobs/` | `GET` | Seeker | View saved jobs |
 
 ```http
-GET /job/<job_id>/save/
-GET /job/<job_id>/unsave/
-GET /seeker/saved/
+POST /job/<job_id>/save/
+POST /job/<job_id>/unsave/
 GET /saved-jobs/
 ```
 
 Requires a seeker account.
 
+## Cover Letter Generation
+
+| Endpoint | Method | Access | Purpose |
+| --- | --- | --- | --- |
+| `/job/<job_id>/cover-letter/generate/` | `POST` | Seeker | Generate an editable AI cover letter draft for a selected job |
+
+```http
+POST /job/<job_id>/cover-letter/generate/
+```
+
+Requires:
+
+- Logged-in seeker.
+- Selected job.
+- Completed resume analysis.
+- Completed career analysis.
+
+Success response:
+
+```json
+{
+  "status": "success",
+  "cover_letter": "Editable generated text...",
+  "model_name": "llama-3.1-8b-instant",
+  "existing_application": false
+}
+```
+
+Failure responses use safe JSON messages and do not expose private resume text or prompt contents.
+
 ## Chat
 
 Chat uses Django views for room setup and Django Channels for real-time message transport.
+
+Chat access is allowed only when the related application status is `shortlisted`, `interview`, or `hired`. Pending, reviewed, and rejected applications cannot create, view, upload to, or connect to chat rooms.
 
 | Endpoint | Methods | Access | Purpose |
 | --- | --- | --- | --- |

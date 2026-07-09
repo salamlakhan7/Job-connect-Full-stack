@@ -1,41 +1,52 @@
-"""
-Django settings for mysite project.
-Optimized for Railway.app Deployment with Fix for Admin Login.
-"""
-
 from pathlib import Path
 import os
 import dj_database_url
+from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 # --- SECURITY SETTINGS ---
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-0pwhx+%(we1d!kwfp%3o+ibgir6+eq0bqzsdc0ifv&-x+fa*m4')
+def _env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
 
-# Keep DEBUG True for now to see errors if it fails; change to False later
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['web-production-1e213.up.railway.app', 'localhost', '127.0.0.1', '.railway.app']
+def _env_list(name, default=''):
+    raw = os.environ.get(name, default)
+    return [item.strip() for item in raw.split(',') if item.strip()]
 
-# CRITICAL FIX: Add both the specific domain and wildcards
-CSRF_TRUSTED_ORIGINS = [
-    'https://web-production-1e213.up.railway.app',
-    'https://*.railway.app'
-]
+
+DEBUG = _env_bool('DEBUG', default=True)
+
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-local-development-key-change-me'
+    else:
+        raise ImproperlyConfigured('SECRET_KEY must be configured when DEBUG=False.')
+
+ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
 
 # Tell Django it's behind a proxy
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = _env_bool('SECURE_SSL_REDIRECT', default=False)
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=False)
+SECURE_HSTS_PRELOAD = _env_bool('SECURE_HSTS_PRELOAD', default=False)
 
-# Separate Admin cookies from User cookies
-SESSION_COOKIE_NAME = 'railway_admin_session_v2'
-CSRF_COOKIE_NAME = 'railway_admin_csrf_v2'
-
-# Security Handshake Settings for Production
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# Security settings
+SESSION_COOKIE_NAME = os.environ.get('SESSION_COOKIE_NAME', 'jobconnect_session')
+CSRF_COOKIE_NAME = os.environ.get('CSRF_COOKIE_NAME', 'jobconnect_csrf')
+SESSION_COOKIE_SECURE = _env_bool('SESSION_COOKIE_SECURE', default=not DEBUG)
+CSRF_COOKIE_SECURE = _env_bool('CSRF_COOKIE_SECURE', default=not DEBUG)
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
-SESSION_SAVE_EVERY_REQUEST = True
+SESSION_SAVE_EVERY_REQUEST = _env_bool('SESSION_SAVE_EVERY_REQUEST', default=False)
 
 # --- APPLICATION DEFINITION ---
 
@@ -93,12 +104,13 @@ DATABASES = {
 # default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
 
 # --- CHANNELS & REDIS ---
-if not DEBUG:
+REDIS_URL = os.environ.get('REDIS_URL')
+if REDIS_URL:
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {
-                "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
+                "hosts": [REDIS_URL],
             },
         }
     }
@@ -111,7 +123,7 @@ else:
 
 # --- STATIC & MEDIA FILES ---
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / "jobs" / "static"]
+STATICFILES_DIRS = []
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STORAGES = {
