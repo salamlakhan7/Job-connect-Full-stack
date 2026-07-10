@@ -173,3 +173,30 @@ JAZZMIN_SETTINGS = {
     "show_sidebar": True,
     "navigation_expanded": True,
 }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'jobs.services.job_matching': {
+            'handlers': ['console'],
+            'level': os.environ.get('JOB_RECOMMENDATION_LOG_LEVEL', 'INFO'),
+            'propagate': True,
+        },
+        'jobs.services.vector_store': {
+            'handlers': ['console'],
+            'level': os.environ.get('JOB_RECOMMENDATION_LOG_LEVEL', 'INFO'),
+            'propagate': True,
+        },
+        'jobs.services.embedding_client': {
+            'handlers': ['console'],
+            'level': os.environ.get('JOB_RECOMMENDATION_LOG_LEVEL', 'INFO'),
+            'propagate': True,
+        },
+    },
+}

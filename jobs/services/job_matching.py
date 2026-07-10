@@ -1,5 +1,7 @@
 import logging
+from importlib import metadata as package_metadata
 
+from django.conf import settings
 from django.utils import timezone
 
 from jobs.models import (
@@ -29,6 +31,29 @@ ATS_WEIGHT = 0.10
 
 class JobMatchingError(Exception):
     """Raised when recommendations cannot be generated."""
+
+
+def _package_version(package_name: str) -> str:
+    try:
+        return package_metadata.version(package_name)
+    except package_metadata.PackageNotFoundError:
+        return 'not-installed'
+
+
+def _recommendation_runtime_context(user_profile, candidate_embedding=None) -> dict:
+    return {
+        'user_profile_id': getattr(user_profile, 'id', None),
+        'candidate_embedding_id': getattr(candidate_embedding, 'id', None),
+        'candidate_embedding_status': getattr(candidate_embedding, 'embedding_status', None),
+        'embedding_model': getattr(settings, 'EMBEDDING_MODEL', ''),
+        'chroma_db_path': getattr(settings, 'CHROMA_DB_PATH', ''),
+        'sentence_transformers_version': _package_version('sentence-transformers'),
+        'transformers_version': _package_version('transformers'),
+        'tokenizers_version': _package_version('tokenizers'),
+        'torch_version': _package_version('torch'),
+        'chromadb_version': _package_version('chromadb'),
+        'onnxruntime_version': _package_version('onnxruntime'),
+    }
 
 
 def _safe_error_message(exc: Exception) -> str:
@@ -82,6 +107,10 @@ def latest_recommendation_run(user_profile):
 
 def refresh_job_recommendations(user_profile, limit=10, query_limit=50):
     candidate_embedding = _latest_completed_candidate_embedding(user_profile)
+    logger.info(
+        "Starting job recommendation refresh. context=%s",
+        _recommendation_runtime_context(user_profile, candidate_embedding),
+    )
     run = JobRecommendationRun.objects.create(
         user_profile=user_profile,
         candidate_embedding=candidate_embedding,
@@ -95,13 +124,29 @@ def refresh_job_recommendations(user_profile, limit=10, query_limit=50):
 
         candidate_vector = get_embedding(CANDIDATE_COLLECTION, f"candidate_{user_profile.id}")
         if not candidate_vector:
+            logger.error(
+                "Candidate vector missing during recommendation refresh. context=%s",
+                _recommendation_runtime_context(user_profile, candidate_embedding),
+            )
             raise JobMatchingError("Candidate vector was not found.")
 
         query_embedding = candidate_vector.get('embeddings', [[]])[0]
+        logger.info(
+            "Candidate vector loaded for recommendation refresh. user_profile_id=%s embedding_dimensions=%s",
+            user_profile.id,
+            len(query_embedding) if hasattr(query_embedding, '__len__') else 'unknown',
+        )
         results = query_embeddings(JOB_COLLECTION, query_embedding, n_results=query_limit)
         ids = results.get('ids', [[]])[0]
         distances = results.get('distances', [[]])[0]
         metadatas = results.get('metadatas', [[]])[0]
+        logger.info(
+            "ChromaDB job query returned recommendation candidates. user_profile_id=%s ids_count=%s distances_count=%s metadatas_count=%s",
+            user_profile.id,
+            len(ids),
+            len(distances),
+            len(metadatas),
+        )
 
         applied_job_ids = set(
             Application.objects
@@ -188,7 +233,12 @@ def refresh_job_recommendations(user_profile, limit=10, query_limit=50):
         run.save(update_fields=['status', 'total_jobs_considered', 'completed_at', 'error_message', 'updated_at'])
         return run
     except Exception as exc:
-        logger.exception("Job recommendation refresh failed for user_profile_id=%s", user_profile.id)
+        logger.exception(
+            "Job recommendation refresh failed. context=%s exception_type=%s exception_message=%s",
+            _recommendation_runtime_context(user_profile, candidate_embedding),
+            exc.__class__.__name__,
+            str(exc),
+        )
         run.status = 'failed'
         run.completed_at = timezone.now()
         run.error_message = _safe_error_message(exc)

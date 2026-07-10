@@ -15,12 +15,24 @@ def _load_model(model_name: str):
     try:
         from sentence_transformers import SentenceTransformer
     except ImportError as exc:
+        logger.exception(
+            "Sentence Transformers import failed. model=%s exception_type=%s exception_message=%s",
+            model_name,
+            exc.__class__.__name__,
+            str(exc),
+        )
         raise EmbeddingError("Sentence Transformers is not installed.") from exc
 
     try:
+        logger.info("Loading SentenceTransformer model. model=%s", model_name)
         return SentenceTransformer(model_name)
     except Exception as exc:
-        logger.exception("Failed to load embedding model.")
+        logger.exception(
+            "Failed to load embedding model. model=%s exception_type=%s exception_message=%s",
+            model_name,
+            exc.__class__.__name__,
+            str(exc),
+        )
         raise EmbeddingError("Failed to load embedding model.") from exc
 
 
@@ -38,7 +50,13 @@ def generate_embedding(text: str) -> list[float]:
     try:
         embedding = model.encode(text, normalize_embeddings=True)
     except Exception as exc:
-        logger.exception("Embedding generation failed.")
+        logger.exception(
+            "Embedding generation failed. model=%s text_length=%s exception_type=%s exception_message=%s",
+            model_name,
+            len(text),
+            exc.__class__.__name__,
+            str(exc),
+        )
         raise EmbeddingError("Embedding generation failed.") from exc
 
     return [float(value) for value in embedding]

@@ -23,15 +23,23 @@ def _get_client():
         import chromadb
         from chromadb.config import Settings
     except ImportError as exc:
+        logger.exception("ChromaDB import failed. exception_type=%s exception_message=%s", exc.__class__.__name__, str(exc))
         raise VectorStoreError("ChromaDB is not installed.") from exc
 
     try:
+        chroma_path = getattr(settings, 'CHROMA_DB_PATH', 'chroma_db')
+        logger.info("Initializing ChromaDB PersistentClient. path=%s", chroma_path)
         return chromadb.PersistentClient(
-            path=getattr(settings, 'CHROMA_DB_PATH', 'chroma_db'),
+            path=chroma_path,
             settings=Settings(anonymized_telemetry=False),
         )
     except Exception as exc:
-        logger.exception("Failed to initialize ChromaDB.")
+        logger.exception(
+            "Failed to initialize ChromaDB. path=%s exception_type=%s exception_message=%s",
+            getattr(settings, 'CHROMA_DB_PATH', 'chroma_db'),
+            exc.__class__.__name__,
+            str(exc),
+        )
         raise VectorStoreError("Failed to initialize ChromaDB.") from exc
 
 
@@ -39,7 +47,12 @@ def _get_collection(name: str):
     try:
         return _get_client().get_or_create_collection(name=name)
     except Exception as exc:
-        logger.exception("Failed to get ChromaDB collection.")
+        logger.exception(
+            "Failed to get ChromaDB collection. collection=%s exception_type=%s exception_message=%s",
+            name,
+            exc.__class__.__name__,
+            str(exc),
+        )
         raise VectorStoreError("Failed to get ChromaDB collection.") from exc
 
 
@@ -61,7 +74,13 @@ def get_embedding(collection_name: str, item_id: str):
     try:
         result = collection.get(ids=[item_id], include=['embeddings', 'metadatas'])
     except Exception as exc:
-        logger.exception("Failed to retrieve ChromaDB embedding.")
+        logger.exception(
+            "Failed to retrieve ChromaDB embedding. collection=%s item_id=%s exception_type=%s exception_message=%s",
+            collection_name,
+            item_id,
+            exc.__class__.__name__,
+            str(exc),
+        )
         raise VectorStoreError("Failed to retrieve ChromaDB embedding.") from exc
 
     if not result.get('ids'):
@@ -87,5 +106,12 @@ def query_embeddings(collection_name: str, query_embedding: list[float], n_resul
             include=['distances', 'metadatas'],
         )
     except Exception as exc:
-        logger.exception("Failed to query ChromaDB embeddings.")
+        logger.exception(
+            "Failed to query ChromaDB embeddings. collection=%s n_results=%s embedding_dimensions=%s exception_type=%s exception_message=%s",
+            collection_name,
+            n_results,
+            len(query_embedding) if hasattr(query_embedding, '__len__') else 'unknown',
+            exc.__class__.__name__,
+            str(exc),
+        )
         raise VectorStoreError("Failed to query ChromaDB embeddings.") from exc
