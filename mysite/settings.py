@@ -136,7 +136,7 @@ STORAGES = {
 }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.environ.get('MEDIA_ROOT', str(BASE_DIR / 'media'))
 
 # --- AI / GROQ SETTINGS ---
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')

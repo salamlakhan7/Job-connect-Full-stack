@@ -1,0 +1,11 @@
+[build]
+builder = "RAILPACK"
+buildCommand = "python manage.py collectstatic --noinput"
+
+[deploy]
+preDeployCommand = "python manage.py migrate"
+startCommand = "daphne -b 0.0.0.0 -p $PORT mysite.asgi:application"
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
