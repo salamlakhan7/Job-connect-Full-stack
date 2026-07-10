@@ -5,7 +5,7 @@ import logging
 from jobs.models import CandidateEmbedding
 
 from .embedding_client import generate_embedding, get_embedding_model_name
-from .vector_store import CANDIDATE_COLLECTION, upsert_embedding
+from .vector_store import CANDIDATE_COLLECTION, get_embedding, upsert_embedding
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,22 @@ def candidate_embedding_hash(resume_analysis, career_analysis=None) -> str:
     return hashlib.sha256(_stable_json(payload).encode('utf-8')).hexdigest()
 
 
+def _candidate_vector_id(user_profile) -> str:
+    return f"candidate_{user_profile.id}"
+
+
+def _candidate_vector_exists(user_profile) -> bool:
+    try:
+        return bool(get_embedding(CANDIDATE_COLLECTION, _candidate_vector_id(user_profile)))
+    except Exception:
+        logger.exception(
+            "Unable to verify candidate vector in ChromaDB. user_profile_id=%s vector_id=%s",
+            user_profile.id,
+            _candidate_vector_id(user_profile),
+        )
+        return False
+
+
 def generate_candidate_embedding(user_profile):
     resume_analysis = getattr(user_profile, 'resume_analysis', None)
     if resume_analysis is None or resume_analysis.status != 'completed':
@@ -73,7 +89,13 @@ def generate_candidate_embedding(user_profile):
         and metadata.embedding_hash == embedding_hash
         and metadata.embedding_model == embedding_model
     ):
-        return metadata
+        if _candidate_vector_exists(user_profile):
+            return metadata
+        logger.warning(
+            "Candidate embedding metadata is completed but ChromaDB vector is missing; regenerating. user_profile_id=%s vector_id=%s",
+            user_profile.id,
+            _candidate_vector_id(user_profile),
+        )
 
     metadata.resume_analysis = resume_analysis
     metadata.career_analysis = career_analysis
@@ -96,7 +118,7 @@ def generate_candidate_embedding(user_profile):
         embedding = generate_embedding(text)
         upsert_embedding(
             CANDIDATE_COLLECTION,
-            f"candidate_{user_profile.id}",
+            _candidate_vector_id(user_profile),
             embedding,
             {
                 'user_profile_id': user_profile.id,

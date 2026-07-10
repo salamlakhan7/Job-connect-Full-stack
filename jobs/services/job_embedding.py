@@ -5,7 +5,7 @@ import re
 from jobs.models import JobEmbedding
 
 from .embedding_client import generate_embedding, get_embedding_model_name
-from .vector_store import JOB_COLLECTION, upsert_embedding
+from .vector_store import JOB_COLLECTION, get_embedding, upsert_embedding
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,22 @@ def job_embedding_hash(job) -> str:
     return hashlib.sha256(payload.encode('utf-8')).hexdigest()
 
 
+def _job_vector_id(job) -> str:
+    return f"job_{job.id}"
+
+
+def _job_vector_exists(job) -> bool:
+    try:
+        return bool(get_embedding(JOB_COLLECTION, _job_vector_id(job)))
+    except Exception:
+        logger.exception(
+            "Unable to verify job vector in ChromaDB. job_id=%s vector_id=%s",
+            job.id,
+            _job_vector_id(job),
+        )
+        return False
+
+
 def generate_job_embedding(job):
     metadata, _ = JobEmbedding.objects.get_or_create(job=job)
     embedding_hash = job_embedding_hash(job)
@@ -64,7 +80,13 @@ def generate_job_embedding(job):
         and metadata.embedding_hash == embedding_hash
         and metadata.embedding_model == embedding_model
     ):
-        return metadata
+        if _job_vector_exists(job):
+            return metadata
+        logger.warning(
+            "Job embedding metadata is completed but ChromaDB vector is missing; regenerating. job_id=%s vector_id=%s",
+            job.id,
+            _job_vector_id(job),
+        )
 
     metadata.embedding_status = 'pending'
     metadata.embedding_hash = embedding_hash
@@ -83,7 +105,7 @@ def generate_job_embedding(job):
         embedding = generate_embedding(text)
         upsert_embedding(
             JOB_COLLECTION,
-            f"job_{job.id}",
+            _job_vector_id(job),
             embedding,
             {
                 'job_id': job.id,

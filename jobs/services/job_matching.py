@@ -6,13 +6,13 @@ from django.utils import timezone
 
 from jobs.models import (
     Application,
-    CandidateEmbedding,
     Job,
     JobRecommendation,
     JobRecommendationRun,
 )
 
-from .job_embedding import derive_required_skills
+from .candidate_embedding import generate_candidate_embedding
+from .job_embedding import derive_required_skills, generate_job_embedding
 from .recommendation_explanations import (
     build_explanation_data,
     candidate_skill_set,
@@ -85,17 +85,6 @@ def _final_score(semantic_score, skills_score, readiness_score, ats_score) -> in
     )
 
 
-def _latest_completed_candidate_embedding(user_profile):
-    try:
-        metadata = user_profile.candidate_embedding
-    except CandidateEmbedding.DoesNotExist:
-        return None
-
-    if metadata.embedding_status != 'completed':
-        return None
-    return metadata
-
-
 def latest_recommendation_run(user_profile):
     return (
         JobRecommendationRun.objects
@@ -105,8 +94,39 @@ def latest_recommendation_run(user_profile):
     )
 
 
+def _ensure_candidate_embedding(user_profile):
+    candidate_embedding = generate_candidate_embedding(user_profile)
+    if candidate_embedding is None or candidate_embedding.embedding_status != 'completed':
+        logger.error(
+            "Candidate embedding is not ready for recommendations. context=%s",
+            _recommendation_runtime_context(user_profile, candidate_embedding),
+        )
+        return None
+    return candidate_embedding
+
+
+def _ensure_job_embeddings():
+    jobs = list(Job.objects.all().order_by('id'))
+    completed_count = 0
+    failed_count = 0
+
+    for job in jobs:
+        metadata = generate_job_embedding(job)
+        if metadata and metadata.embedding_status == 'completed':
+            completed_count += 1
+        else:
+            failed_count += 1
+
+    logger.info(
+        "Verified job embeddings before recommendation query. jobs_count=%s completed_count=%s failed_count=%s",
+        len(jobs),
+        completed_count,
+        failed_count,
+    )
+
+
 def refresh_job_recommendations(user_profile, limit=10, query_limit=50):
-    candidate_embedding = _latest_completed_candidate_embedding(user_profile)
+    candidate_embedding = _ensure_candidate_embedding(user_profile)
     logger.info(
         "Starting job recommendation refresh. context=%s",
         _recommendation_runtime_context(user_profile, candidate_embedding),
@@ -122,11 +142,14 @@ def refresh_job_recommendations(user_profile, limit=10, query_limit=50):
         if candidate_embedding is None:
             raise JobMatchingError("Candidate embedding is not completed.")
 
+        _ensure_job_embeddings()
+
         candidate_vector = get_embedding(CANDIDATE_COLLECTION, f"candidate_{user_profile.id}")
         if not candidate_vector:
             logger.error(
-                "Candidate vector missing during recommendation refresh. context=%s",
+                "Candidate vector missing after embedding regeneration. context=%s vector_id=%s",
                 _recommendation_runtime_context(user_profile, candidate_embedding),
+                f"candidate_{user_profile.id}",
             )
             raise JobMatchingError("Candidate vector was not found.")
 
