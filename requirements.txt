@@ -1,5 +1,5 @@
 # Core Django & ASGI
-Django>=5.1
+Django>=5.1,<6.0
 asgiref==3.10.0
 channels==4.3.2
 daphne==4.2.1
@@ -9,7 +9,7 @@ redis==7.1.0
 # Deployment Essentials
 dj-database-url==2.1.0      # Parses DATABASE_URL
 # psycopg2-binary==2.9.9      # Alternative PostgreSQL database driver
-psycopg[binary]
+psycopg[binary]==3.3.4
 whitenoise==6.6.0           # Serves your CSS/JS files
 gunicorn==23.0.0            # WSGI HTTP Server
 uvicorn==0.30.1             # ASGI Server helper
@@ -41,7 +41,19 @@ pillow==12.0.0
 pypdf==5.1.0
 groq==0.13.1
 python-dotenv==1.2.2
+
+# AI / semantic matching stack
+# Pinned for Render on Python 3.12 to avoid Python 3.14 source builds
+# for compiled packages such as tokenizers, torch, scipy, and scikit-learn.
 sentence-transformers==3.3.1
+transformers==4.46.3
+tokenizers==0.20.3
+huggingface-hub==0.26.5
+safetensors==0.4.5
+numpy==1.26.4
+scipy==1.14.1
+scikit-learn==1.5.2
+onnxruntime==1.20.1
 chromadb==0.5.23
 
 # Utilities
